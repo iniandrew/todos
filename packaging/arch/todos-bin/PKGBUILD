@@ -14,7 +14,7 @@ depends=('webkit2gtk-4.1' 'gtk3' 'libnotify' 'hicolor-icon-theme')
 provides=('todos')
 conflicts=('todos' 'todos-tauri')
 source=("$url/releases/download/v$pkgver/todos-$pkgver-linux-x86_64.tar.gz")
-sha256sums=('SKIP')
+sha256sums=('c611206d99287f91e044efb45cd15340cf907cf187586623ab6eb27e1988882d')
 
 package() {
   cd "$srcdir/todos-$pkgver-linux-x86_64"

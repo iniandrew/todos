@@ -13,6 +13,6 @@ pkgbase = todos-bin
 	conflicts = todos
 	conflicts = todos-tauri
 	source = https://github.com/iniandrew/todos/releases/download/v0.1.0/todos-0.1.0-linux-x86_64.tar.gz
-	sha256sums = SKIP
+	sha256sums = c611206d99287f91e044efb45cd15340cf907cf187586623ab6eb27e1988882d
 
 pkgname = todos-bin
