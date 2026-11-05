@@ -75,7 +75,7 @@
   role="menu"
   tabindex="-1"
   style="left:{pos.left}px; top:{pos.top}px"
-  transition:scale={{ start: 0.96, duration: 120 }}
+  transition:scale={{ start: 0.97, duration: 140, opacity: 0 }}
   {onkeydown}
 >
   {#each items as item, i (i)}
@@ -113,39 +113,56 @@
   .menu {
     position: fixed;
     z-index: 91;
-    min-width: 230px;
-    max-width: 320px;
+    min-width: 220px;
+    max-width: 300px;
     max-height: calc(100vh - 16px);
     overflow-y: auto;
-    padding: 6px;
-    border-radius: 10px;
-    background: var(--surface);
-    border: 1px solid var(--border);
+    padding: 5px;
+    border-radius: 11px;
+    background: var(--menu-bg);
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
     box-shadow: var(--shadow-lg);
     transform-origin: top left;
+    font-size: 13.5px;
   }
   .item {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 9px;
     width: 100%;
-    padding: 8px 10px;
+    height: 28px;
+    padding: 0 9px;
     border-radius: 6px;
     text-align: left;
     color: var(--text);
-  }
-  .item:hover,
-  .item:focus-visible {
-    background: var(--surface-hover);
-    outline: none;
   }
   .item :global(svg) {
     color: var(--text-2);
     flex: none;
   }
+  .item:hover,
+  .item:focus-visible {
+    background: var(--accent);
+    color: #fff;
+    outline: none;
+  }
+  .item:hover :global(svg),
+  .item:focus-visible :global(svg) {
+    color: #fff;
+  }
+  .item:hover kbd,
+  .item:focus-visible kbd {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.85);
+  }
   .danger,
   .danger :global(svg) {
-    color: var(--danger) !important;
+    color: var(--danger);
+  }
+  .danger:hover,
+  .danger:focus-visible {
+    background: var(--danger);
   }
   .label {
     flex: 1;
@@ -156,6 +173,11 @@
   .spacer {
     width: 16px;
   }
+  kbd {
+    background: transparent;
+    color: var(--text-3);
+    padding: 0;
+  }
   .chev {
     display: grid;
     transition: transform 0.15s;
@@ -164,13 +186,11 @@
     transform: rotate(90deg);
   }
   .sub {
-    margin: 2px 0 4px 18px;
-    padding-left: 6px;
-    border-left: 1px solid var(--border);
+    margin: 2px 0 2px 14px;
   }
   .divider {
     height: 1px;
-    margin: 5px 4px;
-    background: var(--border);
+    margin: 5px 9px;
+    background: var(--separator);
   }
 </style>

@@ -13,48 +13,38 @@
   );
 </script>
 
-<div class="empty" in:fade={{ duration: 200 }}>
-  <div class="art">
-    <Icon size={44} strokeWidth={1.4} />
-  </div>
+<div class="empty" in:fade={{ duration: 250 }}>
+  <div class="art"><Icon size={34} strokeWidth={1.7} /></div>
   <h2>{t(`empty.${kind}.title` as TKey)}</h2>
   <p>{t(`empty.${kind}.body` as TKey)}</p>
 </div>
 
 <style>
   .empty {
-    margin: 8vh auto 0;
-    max-width: 340px;
-    padding: 28px 24px;
+    margin: 12vh auto 0;
+    max-width: 300px;
     text-align: center;
-    border-radius: 16px;
-    background: var(--card);
-    box-shadow: var(--shadow-md);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
   }
   .art {
     display: grid;
     place-items: center;
-    width: 88px;
-    height: 88px;
-    margin: 0 auto 14px;
-    border-radius: 50%;
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 16px;
+    border-radius: 22px;
     color: var(--accent);
     background: color-mix(in srgb, var(--accent) 12%, transparent);
-    animation: float 4s ease-in-out infinite;
-  }
-  @keyframes float {
-    50% {
-      transform: translateY(-5px);
-    }
   }
   h2 {
     margin: 0 0 6px;
     font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
   }
   p {
     margin: 0;
+    font-size: 13.5px;
+    line-height: 1.5;
     color: var(--text-2);
   }
 </style>

@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Calendar, CalendarArrowUp, CalendarClock, CalendarX, Plus, Star } from "@lucide/svelte";
+  import { CalendarDays, CalendarArrowUp, CalendarClock, CalendarX, Plus, Star } from "@lucide/svelte";
+  import { fade } from "svelte/transition";
   import { addDays, nextWeekKey, todayKey } from "../lib/dates";
   import { relativeDay } from "../lib/format";
   import { t } from "../lib/i18n/index.svelte";
@@ -17,8 +18,7 @@
     if (store.focusAddTask) input?.focus();
   });
 
-  // Expanding only while there is text avoids layout jumps when the input loses focus.
-  const expanded = $derived(title.length > 0 || !!dueDate || important);
+  const showTools = $derived(title.length > 0 || !!dueDate || important);
 
   async function submit() {
     const value = title.trim();
@@ -35,70 +35,62 @@
   function pickDue() {
     if (!dueBtn) return;
     menu.openAt(dueBtn, [
-      { label: t("date.today"), icon: Calendar, run: () => (dueDate = todayKey()) },
+      { label: t("date.today"), icon: CalendarDays, run: () => (dueDate = todayKey()) },
       { label: t("date.tomorrow"), icon: CalendarArrowUp, run: () => (dueDate = addDays(todayKey(), 1)) },
       { label: t("detail.nextWeek"), icon: CalendarClock, run: () => (dueDate = nextWeekKey()) },
       ...(dueDate
         ? (["divider", { label: t("task.removeDueDate"), icon: CalendarX, danger: true, run: () => (dueDate = null) }] as const)
         : []),
-    ]);
+    ], "right");
   }
 </script>
 
 <form
   class="add"
-  class:expanded
+  class:focused
   onsubmit={(e) => {
     e.preventDefault();
     submit();
   }}
 >
-  <div class="row">
-    <span class="lead">
-      {#if focused}<span class="ring"></span>{:else}<Plus size={20} strokeWidth={2} />{/if}
-    </span>
-    <input
-      bind:this={input}
-      bind:value={title}
-      placeholder={t("task.add")}
-      aria-label={t("task.add")}
-      onfocus={() => (focused = true)}
-      onblur={() => (focused = false)}
-      onkeydown={(e) => {
-        if (e.key === "Escape") {
-          title = "";
-          input?.blur();
-        }
-      }}
-    />
-  </div>
-  {#if expanded}
-    <div class="toolbar">
+  <span class="plus"><Plus size={15} strokeWidth={2.6} /></span>
+  <input
+    bind:this={input}
+    bind:value={title}
+    placeholder={t("task.newTask")}
+    aria-label={t("task.add")}
+    onfocus={() => (focused = true)}
+    onblur={() => (focused = false)}
+    onkeydown={(e) => {
+      if (e.key === "Escape") {
+        title = "";
+        input?.blur();
+      }
+    }}
+  />
+  {#if showTools}
+    <div class="tools" transition:fade={{ duration: 120 }}>
       <button
         type="button"
         bind:this={dueBtn}
-        class="tool"
+        class="pill"
         class:on={dueDate}
         title={t("detail.addDueDate")}
         onmousedown={(e) => e.preventDefault()}
         onclick={pickDue}
       >
-        <Calendar size={16} />
-        {#if dueDate}<span>{relativeDay(dueDate)}</span>{/if}
+        <CalendarDays size={14} strokeWidth={2.1} />
+        {#if dueDate}{relativeDay(dueDate)}{/if}
       </button>
       <button
         type="button"
-        class="tool"
+        class="pill"
         class:on={important}
         title={t("task.markImportant")}
         onmousedown={(e) => e.preventDefault()}
         onclick={() => (important = !important)}
       >
-        <Star size={16} fill={important ? "currentColor" : "none"} />
-      </button>
-      <span class="hint">{t("task.addHint")}</span>
-      <button type="submit" class="submit" disabled={!title.trim()} onmousedown={(e) => e.preventDefault()}>
-        {t("task.addButton")}
+        <Star size={14} strokeWidth={2.1} fill={important ? "currentColor" : "none"} />
       </button>
     </div>
   {/if}
@@ -106,110 +98,68 @@
 
 <style>
   .add {
-    border-radius: 8px;
-    background: var(--card);
-    box-shadow: var(--shadow-sm);
-    margin-bottom: 14px;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    transition: box-shadow 0.2s;
-  }
-  .add.expanded,
-  .add:focus-within {
-    box-shadow: var(--shadow-md);
-  }
-  .row {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 0 16px;
-    height: 52px;
+    height: 44px;
+    padding: 0 8px 0 10px;
+    margin-bottom: 4px;
+    border-radius: 10px;
+    transition: background 0.15s;
   }
-  .lead {
+  .add:hover,
+  .add.focused {
+    background: var(--hover);
+  }
+  .plus {
     display: grid;
     place-items: center;
-    width: 20px;
-    color: var(--accent);
-  }
-  .ring {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
-    border: 1.5px solid var(--text-3);
+    background: var(--accent);
+    color: #fff;
+    flex: none;
+    transition: transform 0.25s var(--spring);
+  }
+  .focused .plus {
+    transform: rotate(90deg);
   }
   input {
     flex: 1;
+    min-width: 0;
     border: none;
     outline: none;
     background: transparent;
-    font-size: 14.5px;
+    font-size: 15px;
   }
   input::placeholder {
-    color: var(--accent);
+    color: var(--text-2);
   }
-  .add:focus-within input::placeholder {
-    color: var(--text-3);
-  }
-  .toolbar {
+  .tools {
     display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 6px 10px 8px 46px;
-    border-top: 1px solid var(--border);
-    background: color-mix(in srgb, var(--surface-2) 70%, transparent);
-    border-radius: 0 0 8px 8px;
+    gap: 6px;
   }
-  .tool {
+  .pill {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    height: 30px;
-    padding: 0 8px;
-    border-radius: 6px;
+    gap: 5px;
+    height: 26px;
+    padding: 0 9px;
+    border-radius: 13px;
+    font-size: 12.5px;
+    font-weight: 500;
     color: var(--text-2);
-    font-size: 13px;
+    background: var(--fill-2);
+    transition:
+      background 0.15s,
+      color 0.15s;
   }
-  .tool:hover {
-    background: var(--surface-hover);
+  .pill:hover {
+    background: var(--fill);
   }
-  .tool.on {
-    color: var(--accent);
-  }
-  .hint {
-    flex: 1;
-    text-align: right;
-    padding-right: 8px;
-    font-size: 12px;
-    color: var(--text-3);
-  }
-  .submit {
-    height: 30px;
-    padding: 0 14px;
-    border-radius: 6px;
-    border: 1px solid var(--border-strong);
-    color: var(--accent);
-    font-weight: 600;
-    font-size: 13px;
-    background: var(--surface);
-  }
-  .submit:disabled {
-    color: var(--text-3);
-    cursor: default;
-  }
-  .submit:not(:disabled):hover {
-    background: var(--accent);
+  .pill.on {
     color: #fff;
-    border-color: transparent;
-  }
-  @media (max-width: 640px) {
-    .hint {
-      display: none;
-    }
-    .toolbar {
-      justify-content: flex-start;
-    }
-    .submit {
-      margin-left: auto;
-    }
+    background: var(--accent);
   }
 </style>

@@ -1,17 +1,18 @@
 # Todos
 
-A fast, good-looking to-do app inspired by Microsoft To Do. It runs on **Windows, macOS and Linux** (every distro, Arch included) and is built with **Rust + Tauri v2**. The UI is written in Svelte 5.
+A fast, clean to-do app with an Apple-inspired design. It runs on **Windows, macOS and Linux** (every distro, Arch included) and is built with **Rust + Tauri v2**. The UI is written in Svelte 5.
 
 > 🇮🇩 [Baca dalam Bahasa Indonesia](#-bahasa-indonesia)
 
 ![Todos – light](docs/screenshot-light.png)
-![Todos – dark, Bahasa Indonesia](docs/screenshot-dark.png)
+![Todos – dark](docs/screenshot-dark.png)
 
 ## Features
 
 - **Smart lists**: *My Day* (clears itself every day), *Important*, *Planned* (grouped by Earlier / Today / Tomorrow / This week / Later) and *Tasks*, plus as many custom lists as you want.
 - **Task details**: steps (sub-tasks, which can be promoted to full tasks), due dates, reminders that show **native desktop notifications**, notes, an important flag and *Add to My Day*.
-- **Personalization**: light, dark or system theme. 14 gradient themes you can set per list and per smart list.
+- **Design**: Apple-inspired UI with San Francisco on macOS and bundled Inter elsewhere, smart-list tiles, inset-grouped inspector with switches, translucent menus and HUD toasts. On macOS the window uses an overlay title bar.
+- **Personalization**: light, dark or system appearance. 12 system colors and 29 icons per list, plus a color per smart list.
 - **Interaction**: drag-and-drop to reorder tasks and lists, a right-click context menu, search across titles, notes and steps, undo after deleting, a completion sound and smooth animations.
 - **Keyboard shortcuts**: `Ctrl/⌘+N` new task, `Ctrl/⌘+L` new list, `Ctrl/⌘+F` search, `Ctrl/⌘+D` complete, `Ctrl/⌘+T` My Day, `Ctrl/⌘+I` important, `Del` delete, `↑/↓` move the selection, `Ctrl/⌘+1…4` switch smart list, `Ctrl/⌘+B` sidebar, `Ctrl/⌘+,` settings. The full list is in Settings.
 - **Two languages**: English and Bahasa Indonesia, switchable in Settings.
@@ -102,13 +103,14 @@ Pushing a tag like `v0.1.0` starts `.github/workflows/release.yml`. It builds on
 
 ## 🇮🇩 Bahasa Indonesia
 
-**Todos** adalah aplikasi to-do yang cepat dan cantik, terinspirasi dari Microsoft To Do. Aplikasi ini jalan di **Windows, macOS, dan Linux** (semua distro, termasuk Arch), dibuat dengan **Rust + Tauri v2**, dan UI-nya memakai Svelte 5.
+**Todos** adalah aplikasi to-do yang cepat dan bersih, dengan desain terinspirasi Apple. Aplikasi ini jalan di **Windows, macOS, dan Linux** (semua distro, termasuk Arch), dibuat dengan **Rust + Tauri v2**, dan UI-nya memakai Svelte 5.
 
 ### Fitur
 
 - **Smart list**: *Hari Ini* (kosong lagi setiap hari), *Penting*, *Terencana* (dikelompokkan per tanggal), dan *Tugas*, plus daftar buatan sendiri sebanyak yang kamu mau.
 - **Detail tugas**: langkah (sub-tugas), tenggat, pengingat dengan **notifikasi desktop**, catatan, tanda penting, dan *Tambahkan ke Hari Ini*.
-- **Personalisasi**: tema terang, gelap, atau ikut sistem. Ada 14 tema gradien yang bisa dipasang per daftar.
+- **Desain**: gaya Apple: font San Francisco di macOS (Inter di OS lain), tile smart list, panel detail bergaya iOS Settings dengan switch, menu transparan, dan toast HUD.
+- **Personalisasi**: tampilan terang, gelap, atau ikut sistem. Ada 12 warna dan 29 ikon per daftar.
 - **Interaktif**: drag & drop untuk mengurutkan, menu klik kanan, pencarian, *undo* setelah menghapus, suara saat tugas selesai, dan animasi halus.
 - **Pintasan keyboard**: daftar lengkapnya ada di Pengaturan.
 - **Dua bahasa**: English dan Bahasa Indonesia, bisa diganti di Pengaturan.

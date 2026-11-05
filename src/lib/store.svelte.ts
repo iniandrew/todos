@@ -316,6 +316,11 @@ class AppStore {
     }
   }
 
+  async setListIcon(id: string, icon: string) {
+    const updated = await api.updateList(id, { icon });
+    this.lists = this.lists.map((l) => (l.id === id ? updated : l));
+  }
+
   async deleteList(list: TaskList) {
     if (this.confirmListDelete) {
       const ok = await this.ask({

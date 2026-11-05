@@ -1,57 +1,68 @@
-:root {
-  --font: "Segoe UI Variable Text", "Segoe UI", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter",
-    "Cantarell", "Ubuntu", "Noto Sans", system-ui, sans-serif;
+@import "@fontsource-variable/inter";
 
-  --bg: #f5f6f8;
-  --sidebar-bg: #f0f1f4;
-  --surface: #ffffff;
-  --surface-2: #f6f7f9;
-  --surface-hover: #f1f3f6;
-  --card: rgba(255, 255, 255, 0.94);
-  --card-hover: rgba(255, 255, 255, 1);
-  --text: #1d2129;
-  --text-2: #5d6573;
-  --text-3: #8a919e;
-  --border: rgba(20, 25, 35, 0.09);
-  --border-strong: rgba(20, 25, 35, 0.16);
-  --danger: #d6334a;
-  --star: #2f6fed;
-  --overlay: rgba(15, 18, 25, 0.38);
-  --shadow-sm: 0 1px 2px rgba(15, 20, 30, 0.08), 0 1px 1px rgba(15, 20, 30, 0.04);
-  --shadow-md: 0 6px 20px rgba(15, 20, 30, 0.12), 0 2px 6px rgba(15, 20, 30, 0.06);
-  --shadow-lg: 0 18px 50px rgba(15, 20, 30, 0.22), 0 4px 12px rgba(15, 20, 30, 0.08);
-  --radius: 10px;
-  --radius-sm: 6px;
-  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+:root {
+  /* San Francisco on Apple platforms, bundled Inter everywhere else. */
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter Variable", "Inter", "Segoe UI Variable Text",
+    "Segoe UI", system-ui, sans-serif;
+
+  --bg: #ffffff;
+  --sidebar-bg: #f5f5f7;
+  --grouped-bg: #f2f2f7;
+  --cell: #ffffff;
+  --elevated: #ffffff;
+  --text: #1d1d1f;
+  --text-2: #6e6e73;
+  --text-3: #a1a1a6;
+  --separator: rgba(60, 60, 67, 0.13);
+  --fill: rgba(118, 118, 128, 0.12);
+  --fill-2: rgba(118, 118, 128, 0.08);
+  --hover: rgba(0, 0, 0, 0.04);
+  --selected: rgba(0, 0, 0, 0.065);
+  --danger: #ff3b30;
+  --overlay: rgba(0, 0, 0, 0.22);
+  --menu-bg: rgba(246, 246, 248, 0.86);
+  --hud-bg: rgba(40, 40, 44, 0.86);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 0.5px rgba(0, 0, 0, 0.12);
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --accent: #0a84ff;
 
   color-scheme: light;
   font-family: var(--font);
   font-size: 14px;
   line-height: 1.4;
+  letter-spacing: -0.005em;
+  font-feature-settings: "cv11", "ss01";
   color: var(--text);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
 
 :root[data-theme="dark"] {
-  --bg: #17181c;
-  --sidebar-bg: #1d1e23;
-  --surface: #25262c;
-  --surface-2: #2b2c33;
-  --surface-hover: #2f3038;
-  --card: rgba(37, 38, 44, 0.92);
-  --card-hover: rgba(45, 46, 54, 0.97);
-  --text: #eceef2;
-  --text-2: #a9aebb;
-  --text-3: #7c8291;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.16);
-  --danger: #ff6b7d;
-  --overlay: rgba(0, 0, 0, 0.5);
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.55);
+  --bg: #1c1c1e;
+  --sidebar-bg: #232325;
+  --grouped-bg: #161618;
+  --cell: #2c2c2e;
+  --elevated: #2c2c2e;
+  --text: #f5f5f7;
+  --text-2: #98989f;
+  --text-3: #636366;
+  --separator: rgba(84, 84, 88, 0.55);
+  --fill: rgba(118, 118, 128, 0.24);
+  --fill-2: rgba(118, 118, 128, 0.16);
+  --hover: rgba(255, 255, 255, 0.045);
+  --selected: rgba(255, 255, 255, 0.085);
+  --danger: #ff453a;
+  --overlay: rgba(0, 0, 0, 0.45);
+  --menu-bg: rgba(44, 44, 48, 0.86);
+  --hud-bg: rgba(60, 60, 66, 0.9);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.55), 0 0 0 0.5px rgba(255, 255, 255, 0.12);
   color-scheme: dark;
 }
 
@@ -71,6 +82,7 @@ body {
   background: var(--bg);
   user-select: none;
   -webkit-user-select: none;
+  cursor: default;
 }
 
 input,
@@ -86,69 +98,129 @@ textarea,
 select {
   font: inherit;
   color: inherit;
+  letter-spacing: inherit;
 }
 
 button {
-  cursor: pointer;
+  cursor: default;
   background: none;
   border: none;
   padding: 0;
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent, #2f6fed);
-  outline-offset: 2px;
+  outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 1px;
+  border-radius: 6px;
 }
 
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(127, 127, 127, 0.35);
+  background: rgba(127, 127, 127, 0.32);
   border-radius: 10px;
-  border: 3px solid transparent;
+  border: 4px solid transparent;
   background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(127, 127, 127, 0.55);
+  background-color: rgba(127, 127, 127, 0.5);
 }
-::-webkit-scrollbar-track {
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
   background: transparent;
 }
 
-.icon-btn {
+/* Small borderless toolbar button. */
+.tool-btn {
   display: inline-grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
+  width: 30px;
+  height: 28px;
+  border-radius: 7px;
   color: var(--text-2);
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
-.icon-btn:hover {
-  background: var(--surface-hover);
+.tool-btn:hover {
+  background: var(--fill);
   color: var(--text);
 }
+.tool-btn:active {
+  background: var(--fill);
+  transform: scale(0.96);
+}
 
-.sr-only {
+/* iOS style switch: <label class="switch"><input type="checkbox"><span></span></label> */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 42px;
+  height: 25px;
+  flex: none;
+}
+.switch input {
   position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: default;
+}
+.switch span {
+  position: absolute;
+  inset: 0;
+  border-radius: 13px;
+  background: var(--fill);
+  transition: background 0.25s var(--ease);
+  pointer-events: none;
+}
+.switch span::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.18),
+    0 0 1px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s var(--spring);
+}
+.switch input:checked + span {
+  background: #34c759;
+}
+.switch input:checked + span::after {
+  transform: translateX(17px);
+}
+.switch input:focus-visible + span {
+  outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 1px;
+}
+
+/* Rounded square icon used in grouped rows. */
+.glyph {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  color: #fff;
+  flex: none;
 }
 
 kbd {
-  font-family: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", monospace;
-  font-size: 11px;
-  padding: 2px 6px;
+  font-family: inherit;
+  font-size: 12px;
+  min-width: 22px;
+  padding: 1px 6px;
   border-radius: 5px;
-  background: var(--surface-2);
-  border: 1px solid var(--border-strong);
-  border-bottom-width: 2px;
+  background: var(--fill-2);
   color: var(--text-2);
+  text-align: center;
   white-space: nowrap;
 }
 

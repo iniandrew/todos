@@ -11,6 +11,11 @@
   import { menu } from "./lib/menu.svelte";
   import { handleShortcut } from "./lib/shortcuts";
   import { store } from "./lib/store.svelte";
+  import { inTauri } from "./lib/api";
+  import { isMac } from "./lib/shortcuts";
+
+  /** On macOS the window uses an overlay title bar (see tauri.macos.conf.json). */
+  const macOverlay = inTauri && isMac;
 
   let systemDark = $state(false);
   let narrow = $state(false);
@@ -67,14 +72,14 @@
       <div class="scrim" onpointerdown={() => (store.sidebarOpen = false)}></div>
     {/if}
     <div class="sidebar-wrap" class:floating={narrow}>
-      <Sidebar />
+      <Sidebar {macOverlay} />
     </div>
   {/if}
   <main>
-    <TaskListView />
+    <TaskListView {macOverlay} />
     {#if store.selectedTask}
       {#key store.selectedTask.id}
-        <DetailPanel task={store.selectedTask} />
+        <DetailPanel task={store.selectedTask} {macOverlay} />
       {/key}
     {/if}
   </main>

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Bell, Info, Trash2, X } from "@lucide/svelte";
+  import { Bell, Info, Trash2 } from "@lucide/svelte";
   import { flip } from "svelte/animate";
   import { fly } from "svelte/transition";
   import { store } from "../lib/store.svelte";
@@ -7,8 +7,10 @@
 
 <div class="toasts" aria-live="polite">
   {#each store.toasts as toast (toast.id)}
-    <div class="toast" animate:flip={{ duration: 200 }} in:fly={{ y: 20, duration: 220 }} out:fly={{ y: 10, duration: 160 }}>
-      {#if toast.icon === "trash"}<Trash2 size={16} />{:else if toast.icon === "bell"}<Bell size={16} />{:else}<Info size={16} />{/if}
+    <div class="toast" animate:flip={{ duration: 220 }} in:fly={{ y: 24, duration: 320 }} out:fly={{ y: 12, duration: 180 }}>
+      <span class="ico">
+        {#if toast.icon === "trash"}<Trash2 size={15} />{:else if toast.icon === "bell"}<Bell size={15} />{:else}<Info size={15} />{/if}
+      </span>
       <span class="msg">{toast.message}</span>
       {#if toast.action}
         <button
@@ -19,7 +21,6 @@
           }}>{toast.action.label}</button
         >
       {/if}
-      <button class="close" aria-label="Dismiss" onclick={() => store.dismissToast(toast.id)}><X size={14} /></button>
     </div>
   {/each}
 </div>
@@ -28,7 +29,7 @@
   .toasts {
     position: fixed;
     left: 50%;
-    bottom: 24px;
+    bottom: 22px;
     transform: translateX(-50%);
     z-index: 120;
     display: flex;
@@ -42,42 +43,37 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    min-width: 260px;
-    max-width: min(520px, calc(100vw - 32px));
-    padding: 10px 10px 10px 14px;
-    border-radius: 10px;
-    background: #23252b;
-    color: #f2f3f5;
-    box-shadow: var(--shadow-lg);
+    max-width: min(480px, calc(100vw - 32px));
+    height: 42px;
+    padding: 0 8px 0 16px;
+    border-radius: 21px;
+    background: var(--hud-bg);
+    color: #fff;
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    font-size: 13.5px;
   }
-  :global([data-theme="dark"]) .toast {
-    background: #3a3c45;
+  .ico {
+    display: grid;
+    opacity: 0.85;
   }
   .msg {
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    padding-right: 8px;
   }
   .action {
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-weight: 700;
-    color: #8fb4ff;
+    height: 28px;
+    padding: 0 12px;
+    border-radius: 14px;
+    font-weight: 600;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.16);
   }
   .action:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
-  .close {
-    display: grid;
-    place-items: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 6px;
-    opacity: 0.7;
-  }
-  .close:hover {
-    opacity: 1;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.26);
   }
 </style>

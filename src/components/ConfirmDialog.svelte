@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { TriangleAlert } from "@lucide/svelte";
   import { t } from "../lib/i18n/index.svelte";
   import type { ConfirmRequest } from "../lib/store.svelte";
   import Modal from "./Modal.svelte";
@@ -7,63 +6,56 @@
   let { req }: { req: ConfirmRequest } = $props();
 </script>
 
-<Modal label={req.title} width={400} onclose={() => req.resolve(false)}>
+<Modal label={req.title} width={300} onclose={() => req.resolve(false)}>
   <div class="body">
-    <div class="icon"><TriangleAlert size={22} /></div>
+    <img src="/favicon.svg" alt="" width="56" height="56" />
     <h2>{req.title}</h2>
     <p>{req.body}</p>
-  </div>
-  <div class="actions">
-    <button class="btn" data-autofocus onclick={() => req.resolve(false)}>{t("common.cancel")}</button>
-    <button class="btn danger" onclick={() => req.resolve(true)}>{req.confirmLabel}</button>
+    <div class="actions">
+      <button class="btn" data-autofocus onclick={() => req.resolve(false)}>{t("common.cancel")}</button>
+      <button class="btn danger" onclick={() => req.resolve(true)}>{req.confirmLabel}</button>
+    </div>
   </div>
 </Modal>
 
 <style>
   .body {
-    padding: 22px 22px 8px;
+    padding: 22px 18px 16px;
+    text-align: center;
+    background: var(--elevated);
   }
-  .icon {
-    display: grid;
-    place-items: center;
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    color: var(--danger);
-    background: color-mix(in srgb, var(--danger) 14%, transparent);
-    margin-bottom: 12px;
+  img {
+    display: block;
+    margin: 0 auto 10px;
   }
   h2 {
     margin: 0 0 6px;
-    font-size: 17px;
+    font-size: 15px;
+    font-weight: 700;
   }
   p {
-    margin: 0;
+    margin: 0 0 18px;
+    font-size: 12.5px;
+    line-height: 1.45;
     color: var(--text-2);
   }
   .actions {
-    display: flex;
-    justify-content: flex-end;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 8px;
-    padding: 16px 22px 20px;
   }
   .btn {
-    height: 34px;
-    padding: 0 16px;
+    height: 30px;
     border-radius: 8px;
-    font-weight: 600;
-    border: 1px solid var(--border-strong);
-    background: var(--surface-2);
+    font-size: 13.5px;
+    font-weight: 500;
+    background: var(--fill);
   }
   .btn:hover {
-    background: var(--surface-hover);
+    filter: brightness(0.96);
   }
   .btn.danger {
     background: var(--danger);
-    border-color: transparent;
     color: #fff;
-  }
-  .btn.danger:hover {
-    filter: brightness(1.08);
   }
 </style>

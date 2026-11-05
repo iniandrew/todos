@@ -1,74 +1,52 @@
 <script lang="ts">
-  import {
-    ArrowUpFromLine,
-    Bell,
-    Calendar,
-    CalendarArrowUp,
-    CalendarClock,
-    CalendarDays,
-    Clock,
-    Plus,
-    Sun,
-    Trash2,
-    X,
-    PanelRightClose,
-  } from "@lucide/svelte";
-  import { fly } from "svelte/transition";
+  import { ArrowUpFromLine, Bell, CalendarDays, ChevronsUpDown, Plus, Star, Sun, Trash2, X } from "@lucide/svelte";
+  import { untrack } from "svelte";
+  import { fly, slide } from "svelte/transition";
   import { addDays, dueState, isoToLocalInput, laterToday, localInputToIso, nextWeekKey, reminderAt, todayKey } from "../lib/dates";
   import { dateFromIso, relativeDay, time } from "../lib/format";
   import { t } from "../lib/i18n/index.svelte";
-  import { menu } from "../lib/menu.svelte";
+  import { listIcon } from "../lib/listIcons";
   import { store } from "../lib/store.svelte";
+  import { getTheme } from "../lib/themes";
   import type { Task } from "../lib/types";
   import Checkbox from "./Checkbox.svelte";
-  import Star from "./Star.svelte";
 
-  interface Props {
-    task: Task;
-  }
-  let { task }: Props = $props();
+  let { task, macOverlay = false }: { task: Task; macOverlay?: boolean } = $props();
 
-  let title = $state("");
-  let notes = $state("");
+  // The panel is re-mounted per task (keyed in App), so the initial values are what we want.
+  let title = $state(untrack(() => task.title));
+  let notes = $state(untrack(() => task.notes));
   let newStep = $state("");
   let editingStep = $state<string | null>(null);
   let stepValue = $state("");
-  let picking = $state<"due" | "reminder" | null>(null);
-  let pickValue = $state("");
-  let remindBtn: HTMLButtonElement | undefined = $state();
-  let dueBtn: HTMLButtonElement | undefined = $state();
   let titleEl: HTMLTextAreaElement | undefined = $state();
+  let notesEl: HTMLTextAreaElement | undefined = $state();
   let notesTimer: ReturnType<typeof setTimeout> | undefined;
 
-  // Reset local edit buffers whenever another task is selected.
-  let lastId = "";
+  // Keep in sync with outside changes (context menu, shortcuts) while not editing.
   $effect(() => {
-    if (task.id !== lastId) {
-      lastId = task.id;
-      title = task.title;
-      notes = task.notes;
-      newStep = "";
-      picking = null;
-      editingStep = null;
-    }
-  });
-  // Keep in sync with outside changes (context menu etc.) when not editing.
-  $effect(() => {
-    if (document.activeElement !== titleEl) title = task.title;
+    const incoming = task.title;
+    if (document.activeElement !== titleEl) title = incoming;
   });
 
-  function autosize() {
-    if (!titleEl) return;
-    titleEl.style.height = "auto";
-    titleEl.style.height = `${titleEl.scrollHeight}px`;
+  function autosize(el: HTMLTextAreaElement | undefined) {
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
   }
   $effect(() => {
     void title;
-    requestAnimationFrame(autosize);
+    void notes;
+    requestAnimationFrame(() => {
+      autosize(titleEl);
+      autosize(notesEl);
+    });
   });
 
   const inMyDay = $derived(task.myDayDate === store.today);
   const due = $derived(task.dueDate ? dueState(task.dueDate, store.today) : null);
+  const list = $derived(store.lists.find((l) => l.id === task.listId));
+  const ListIcon = $derived(listIcon(list?.icon));
 
   function saveTitle() {
     const v = title.trim();
@@ -80,7 +58,8 @@
     clearTimeout(notesTimer);
     const id = task.id;
     const value = notes;
-    notesTimer = setTimeout(() => store.patchTask(id, { notes: value }), 500);
+    if (value === task.notes) return;
+    notesTimer = setTimeout(() => store.patchTask(id, { notes: value }), 400);
   }
 
   function addStep() {
@@ -96,71 +75,44 @@
     if (v) store.renameStep(id, v);
   }
 
-  function remindMenu() {
-    if (!remindBtn) return;
-    const tomorrow = addDays(todayKey(), 1);
-    const nextWeek = nextWeekKey();
-    menu.openAt(remindBtn, [
-      { label: `${t("detail.laterToday")} · ${time(laterToday())}`, icon: Clock, run: () => setReminder(laterToday()) },
-      { label: `${t("detail.tomorrow")} · ${time(reminderAt(tomorrow, 9))}`, icon: CalendarArrowUp, run: () => setReminder(reminderAt(tomorrow, 9)) },
-      { label: `${t("detail.nextWeek")} · ${relativeDay(nextWeek)}`, icon: CalendarClock, run: () => setReminder(reminderAt(nextWeek, 9)) },
-      "divider",
-      {
-        label: t("detail.pickDateTime"),
-        icon: CalendarDays,
-        run: () => {
-          pickValue = task.reminderAt ? isoToLocalInput(task.reminderAt) : isoToLocalInput(laterToday());
-          picking = "reminder";
-        },
-      },
-    ]);
+  function setDue(date: string | null) {
+    store.patchTask(task.id, { dueDate: date });
   }
 
   function setReminder(iso: string | null) {
-    picking = null;
     store.patchTask(task.id, { reminderAt: iso });
     if (iso && "Notification" in window && Notification.permission === "default") {
       Notification.requestPermission().catch(() => {});
     }
   }
 
-  function dueMenu() {
-    if (!dueBtn) return;
-    menu.openAt(dueBtn, [
-      { label: t("date.today"), icon: Calendar, run: () => setDue(todayKey()) },
-      { label: t("date.tomorrow"), icon: CalendarArrowUp, run: () => setDue(addDays(todayKey(), 1)) },
-      { label: `${t("detail.nextWeek")} · ${relativeDay(nextWeekKey())}`, icon: CalendarClock, run: () => setDue(nextWeekKey()) },
-      "divider",
-      {
-        label: t("task.pickDate"),
-        icon: CalendarDays,
-        run: () => {
-          pickValue = task.dueDate ?? todayKey();
-          picking = "due";
-        },
-      },
-    ]);
-  }
+  const createdLabel = $derived.by(() => {
+    if (task.completed && task.completedAt) {
+      const d = dateFromIso(task.completedAt);
+      return d === t("date.today") ? t("detail.completedToday") : t("detail.completedOn", { date: d });
+    }
+    const d = dateFromIso(task.createdAt);
+    return d === t("date.today") ? t("detail.createdToday") : t("detail.createdOn", { date: d });
+  });
 
-  function setDue(date: string | null) {
-    picking = null;
-    store.patchTask(task.id, { dueDate: date });
-  }
-
-  function savePick() {
-    if (!pickValue) return;
-    if (picking === "due") setDue(pickValue);
-    else if (picking === "reminder") setReminder(localInputToIso(pickValue));
-  }
+  const tomorrow = $derived(addDays(store.today, 1));
+  const nextWeek = $derived(nextWeekKey(store.today));
 </script>
 
-<aside class="panel" style="--accent:{store.theme.accent}" transition:fly={{ x: 40, duration: 220 }}>
+<aside class="panel" transition:fly={{ x: 24, duration: 260, opacity: 0 }}>
+  <div class="head" class:mac={macOverlay} data-tauri-drag-region>
+    <button class="close" title={t("detail.close")} aria-label={t("detail.close")} onclick={() => store.select(null)}>
+      <X size={13} strokeWidth={2.8} />
+    </button>
+  </div>
+
   <div class="scroll">
-    <section class="card head">
+    <!-- Title + notes -->
+    <section class="group">
       <div class="title-row">
         <Checkbox
           checked={task.completed}
-          size={22}
+          size={24}
           label={task.completed ? t("task.markIncomplete") : t("task.markComplete")}
           onchange={() => store.toggleComplete(task)}
         />
@@ -171,7 +123,6 @@
           class="title"
           class:done={task.completed}
           aria-label={t("task.add")}
-          oninput={autosize}
           onblur={saveTitle}
           onkeydown={(e) => {
             if (e.key === "Enter") {
@@ -184,209 +135,225 @@
             }
           }}
         ></textarea>
-        <Star
-          active={task.important}
-          label={task.important ? t("task.removeImportant") : t("task.markImportant")}
-          onchange={() => store.toggleImportant(task)}
-        />
       </div>
+      <textarea
+        bind:this={notesEl}
+        bind:value={notes}
+        rows="2"
+        class="notes"
+        placeholder={t("detail.notes")}
+        aria-label={t("task.notes")}
+        oninput={onNotes}
+        onblur={onNotes}
+      ></textarea>
+    </section>
 
-      <ul class="steps">
-        {#each task.steps as step (step.id)}
-          <li class="step">
-            <Checkbox
-              checked={step.completed}
-              size={17}
-              label={step.completed ? t("task.markIncomplete") : t("task.markComplete")}
-              onchange={() => store.toggleStep(step.id, !step.completed)}
+    <!-- Steps -->
+    <div class="group-label">{t("detail.steps")}</div>
+    <section class="group">
+      {#each task.steps as step (step.id)}
+        <div class="row step" transition:slide={{ duration: 180 }}>
+          <Checkbox
+            checked={step.completed}
+            size={19}
+            label={step.completed ? t("task.markIncomplete") : t("task.markComplete")}
+            onchange={() => store.toggleStep(step.id, !step.completed)}
+          />
+          {#if editingStep === step.id}
+            <!-- svelte-ignore a11y_autofocus -->
+            <input
+              class="step-input"
+              bind:value={stepValue}
+              autofocus
+              onblur={() => saveStep(step.id)}
+              onkeydown={(e) => {
+                if (e.key === "Enter") e.currentTarget.blur();
+                if (e.key === "Escape") editingStep = null;
+              }}
             />
-            {#if editingStep === step.id}
-              <!-- svelte-ignore a11y_autofocus -->
-              <input
-                class="step-input"
-                bind:value={stepValue}
-                autofocus
-                onblur={() => saveStep(step.id)}
-                onkeydown={(e) => {
-                  if (e.key === "Enter") e.currentTarget.blur();
-                  if (e.key === "Escape") editingStep = null;
-                }}
-              />
-            {:else}
-              <button
-                class="step-title"
-                class:done={step.completed}
-                onclick={() => {
-                  editingStep = step.id;
-                  stepValue = step.title;
-                }}>{step.title}</button
-              >
-            {/if}
-            <div class="step-actions">
-              <button class="mini" title={t("detail.promote")} onclick={() => store.promoteStep(step.id)}>
-                <ArrowUpFromLine size={14} />
-              </button>
-              <button class="mini" title={t("detail.deleteStep")} onclick={() => store.deleteStep(step.id)}>
-                <X size={14} />
-              </button>
-            </div>
-          </li>
-        {/each}
-      </ul>
+          {:else}
+            <button
+              class="step-title"
+              class:done={step.completed}
+              onclick={() => {
+                editingStep = step.id;
+                stepValue = step.title;
+              }}>{step.title}</button
+            >
+          {/if}
+          <div class="step-actions">
+            <button class="mini" title={t("detail.promote")} onclick={() => store.promoteStep(step.id)}>
+              <ArrowUpFromLine size={14} />
+            </button>
+            <button class="mini" title={t("detail.deleteStep")} onclick={() => store.deleteStep(step.id)}>
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      {/each}
       <form
-        class="add-step"
+        class="row add-step"
         onsubmit={(e) => {
           e.preventDefault();
           addStep();
         }}
       >
-        <Plus size={17} />
-        <input
-          bind:value={newStep}
-          placeholder={task.steps.length ? t("detail.nextStep") : t("detail.addStep")}
-          aria-label={t("detail.addStep")}
-        />
+        <span class="add-dot"><Plus size={12} strokeWidth={3} /></span>
+        <input bind:value={newStep} placeholder={t("detail.addStep")} aria-label={t("detail.addStep")} />
       </form>
     </section>
 
-    <section class="card">
-      <button class="row-btn" class:on={inMyDay} onclick={() => store.toggleMyDay(task)}>
-        <Sun size={18} />
-        <span class="label">{inMyDay ? t("task.addedToMyDay") : t("task.addToMyDay")}</span>
-        {#if inMyDay}
-          <span
-            class="clear"
-            role="button"
-            tabindex="0"
-            title={t("task.removeFromMyDay")}
-            onclick={(e) => {
-              e.stopPropagation();
-              store.toggleMyDay(task);
-            }}
-            onkeydown={(e) => e.key === "Enter" && store.toggleMyDay(task)}><X size={14} /></span
-          >
-        {/if}
-      </button>
+    <!-- Flags -->
+    <section class="group">
+      <label class="row">
+        <span class="glyph" style="background:{getTheme('orange').accent}"><Sun size={16} strokeWidth={2.4} /></span>
+        <span class="row-label">{t("view.myDay")}</span>
+        <span class="switch"><input type="checkbox" checked={inMyDay} onchange={() => store.toggleMyDay(task)} /><span></span></span>
+      </label>
+      <label class="row">
+        <span class="glyph" style="background:{getTheme('pink').accent}"><Star size={15} strokeWidth={2.4} fill="currentColor" /></span>
+        <span class="row-label">{t("detail.important")}</span>
+        <span class="switch"><input type="checkbox" checked={task.important} onchange={() => store.toggleImportant(task)} /><span></span></span>
+      </label>
     </section>
 
-    <section class="card">
-      <button class="row-btn" class:on={task.reminderAt} bind:this={remindBtn} onclick={remindMenu}>
-        <Bell size={18} />
-        <span class="label">
-          {#if task.reminderAt}
-            {t("detail.remindAt", { time: time(task.reminderAt) })}
-            <small>{dateFromIso(task.reminderAt)}</small>
-          {:else}
-            {t("detail.remindMe")}
-          {/if}
+    <!-- Dates -->
+    <section class="group">
+      <label class="row">
+        <span class="glyph" style="background:{getTheme('red').accent}"><CalendarDays size={16} strokeWidth={2.4} /></span>
+        <span class="row-label">
+          {t("detail.dueDate")}
+          {#if task.dueDate}<small class={task.completed ? "" : due}>{relativeDay(task.dueDate)}</small>{/if}
         </span>
-        {#if task.reminderAt}
-          <span
-            class="clear"
-            role="button"
-            tabindex="0"
-            title={t("detail.clear")}
-            onclick={(e) => {
-              e.stopPropagation();
-              setReminder(null);
-            }}
-            onkeydown={(e) => e.key === "Enter" && setReminder(null)}><X size={14} /></span
-          >
-        {/if}
-      </button>
-      {#if picking === "reminder"}
-        <div class="picker" transition:fly={{ y: -6, duration: 150 }}>
-          <input type="datetime-local" bind:value={pickValue} />
-          <button class="btn primary" onclick={savePick}>{t("detail.save")}</button>
+        <span class="switch">
+          <input type="checkbox" checked={!!task.dueDate} onchange={(e) => setDue(e.currentTarget.checked ? todayKey() : null)} /><span></span>
+        </span>
+      </label>
+      {#if task.dueDate}
+        <div class="sub" transition:slide={{ duration: 200 }}>
+          <div class="chips">
+            <button class="chip" class:on={task.dueDate === store.today} onclick={() => setDue(store.today)}>{t("date.today")}</button>
+            <button class="chip" class:on={task.dueDate === tomorrow} onclick={() => setDue(tomorrow)}>{t("date.tomorrow")}</button>
+            <button class="chip" class:on={task.dueDate === nextWeek} onclick={() => setDue(nextWeek)}>{t("detail.nextWeek")}</button>
+          </div>
+          <input type="date" value={task.dueDate} onchange={(e) => e.currentTarget.value && setDue(e.currentTarget.value)} />
         </div>
       {/if}
-      <div class="sep"></div>
-      <button class="row-btn {task.dueDate && !task.completed ? due : ''}" class:on={task.dueDate} bind:this={dueBtn} onclick={dueMenu}>
-        <CalendarDays size={18} />
-        <span class="label">
-          {task.dueDate ? t("detail.due", { date: relativeDay(task.dueDate) }) : t("detail.addDueDate")}
+
+      <label class="row">
+        <span class="glyph" style="background:{getTheme('indigo').accent}"><Bell size={15} strokeWidth={2.4} /></span>
+        <span class="row-label">
+          {t("detail.reminder")}
+          {#if task.reminderAt}<small>{dateFromIso(task.reminderAt)}, {time(task.reminderAt)}</small>{/if}
         </span>
-        {#if task.dueDate}
-          <span
-            class="clear"
-            role="button"
-            tabindex="0"
-            title={t("task.removeDueDate")}
-            onclick={(e) => {
-              e.stopPropagation();
-              setDue(null);
-            }}
-            onkeydown={(e) => e.key === "Enter" && setDue(null)}><X size={14} /></span
-          >
-        {/if}
-      </button>
-      {#if picking === "due"}
-        <div class="picker" transition:fly={{ y: -6, duration: 150 }}>
-          <input type="date" bind:value={pickValue} />
-          <button class="btn primary" onclick={savePick}>{t("detail.save")}</button>
+        <span class="switch">
+          <input type="checkbox" checked={!!task.reminderAt} onchange={(e) => setReminder(e.currentTarget.checked ? laterToday() : null)} /><span></span>
+        </span>
+      </label>
+      {#if task.reminderAt}
+        <div class="sub" transition:slide={{ duration: 200 }}>
+          <div class="chips">
+            <button class="chip" onclick={() => setReminder(laterToday())}>{t("detail.laterToday")}</button>
+            <button class="chip" class:on={task.reminderAt === reminderAt(tomorrow, 9)} onclick={() => setReminder(reminderAt(tomorrow, 9))}
+              >{t("detail.tomorrow")} 9:00</button
+            >
+            <button class="chip" class:on={task.reminderAt === reminderAt(nextWeek, 9)} onclick={() => setReminder(reminderAt(nextWeek, 9))}
+              >{t("detail.nextWeek")}</button
+            >
+          </div>
+          <input
+            type="datetime-local"
+            value={isoToLocalInput(task.reminderAt)}
+            onchange={(e) => e.currentTarget.value && setReminder(localInputToIso(e.currentTarget.value))}
+          />
         </div>
       {/if}
     </section>
 
-    <section class="card notes">
-      <textarea bind:value={notes} oninput={onNotes} onblur={onNotes} placeholder={t("detail.addNote")} aria-label={t("task.notes")}
-      ></textarea>
+    <!-- List -->
+    <section class="group">
+      <label class="row">
+        <span class="glyph" style="background:{getTheme(list?.theme).accent}"><ListIcon size={15} strokeWidth={2.4} /></span>
+        <span class="row-label">{t("detail.list")}</span>
+        <span class="select">
+          <select value={task.listId} onchange={(e) => store.patchTask(task.id, { listId: e.currentTarget.value })}>
+            {#each store.lists as l (l.id)}
+              <option value={l.id}>{l.isDefault ? t("view.tasks") : l.name}</option>
+            {/each}
+          </select>
+          <ChevronsUpDown size={13} strokeWidth={2.2} />
+        </span>
+      </label>
     </section>
+
+    <section class="group">
+      <button class="row danger" onclick={() => store.deleteTask(task)}>
+        <Trash2 size={16} strokeWidth={2} />
+        {t("task.delete")}
+      </button>
+    </section>
+
+    <div class="foot">{createdLabel}</div>
   </div>
-
-  <footer>
-    <button class="icon-btn" title={t("detail.close")} onclick={() => store.select(null)}>
-      <PanelRightClose size={18} />
-    </button>
-    <span class="meta">
-      {#if task.completed && task.completedAt}
-        {dateFromIso(task.completedAt) === t("date.today")
-          ? t("detail.completedToday")
-          : t("detail.completedOn", { date: dateFromIso(task.completedAt) })}
-      {:else if dateFromIso(task.createdAt) === t("date.today")}
-        {t("detail.createdToday")}
-      {:else}
-        {t("detail.createdOn", { date: dateFromIso(task.createdAt) })}
-      {/if}
-    </span>
-    <button class="icon-btn danger" title={t("task.delete")} onclick={() => store.deleteTask(task)}>
-      <Trash2 size={18} />
-    </button>
-  </footer>
 </aside>
 
 <style>
   .panel {
-    width: 360px;
+    width: 350px;
     flex: none;
     display: flex;
     flex-direction: column;
-    background: var(--sidebar-bg);
-    border-left: 1px solid var(--border);
     height: 100%;
+    background: var(--grouped-bg);
+    border-left: 1px solid var(--separator);
+  }
+  .head {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    height: 48px;
+    padding: 10px 14px 0;
+    flex: none;
+  }
+  .close {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--fill);
+    color: var(--text-2);
+    transition: background 0.15s;
+  }
+  .close:hover {
+    background: var(--text-3);
+    color: var(--bg);
   }
   .scroll {
     flex: 1;
     overflow-y: auto;
-    padding: 16px 14px;
+    padding: 4px 16px 24px;
   }
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    margin-bottom: 10px;
+  .group {
+    background: var(--cell);
+    border-radius: 12px;
+    margin-bottom: 18px;
     overflow: hidden;
   }
-  .head {
-    padding: 14px 6px 6px 14px;
+  .group-label {
+    margin: 0 14px 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-2);
   }
   .title-row {
     display: flex;
     align-items: flex-start;
     gap: 12px;
+    padding: 14px 14px 0;
   }
   .title-row :global(.check) {
-    margin-top: 4px;
+    margin-top: 2px;
   }
   .title {
     flex: 1;
@@ -394,52 +361,96 @@
     border: none;
     outline: none;
     background: transparent;
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 19px;
+    font-weight: 650;
+    letter-spacing: -0.015em;
     line-height: 1.35;
-    padding: 2px 0;
+    padding: 0;
     overflow: hidden;
-    border-radius: 4px;
-  }
-  .title:focus {
-    box-shadow: 0 2px 0 var(--accent);
   }
   .title.done {
-    text-decoration: line-through;
+    color: var(--text-2);
+  }
+  .notes {
+    display: block;
+    width: 100%;
+    resize: none;
+    border: none;
+    outline: none;
+    background: transparent;
+    padding: 6px 14px 14px 50px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-2);
+    overflow: hidden;
+    min-height: 44px;
+  }
+  .notes:focus {
+    color: var(--text);
+  }
+  .notes::placeholder {
     color: var(--text-3);
   }
-  .steps {
-    list-style: none;
-    margin: 8px 0 0;
-    padding: 0;
-  }
-  .step {
+  .row {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 10px;
-    min-height: 38px;
-    padding-left: 2px;
-    border-bottom: 1px solid var(--border);
-    margin-right: 8px;
+    gap: 12px;
+    width: 100%;
+    min-height: 46px;
+    padding: 8px 14px;
+    text-align: left;
+  }
+  .row + .row::before,
+  .sub + .row::before,
+  .row + .sub::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 54px;
+    right: 0;
+    height: 1px;
+    background: var(--separator);
+  }
+  .step + .step::before,
+  .step + .add-step::before {
+    left: 45px;
+  }
+  .row-label {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    font-size: 14.5px;
+  }
+  .row-label small {
+    font-size: 12.5px;
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .row-label small.overdue {
+    color: var(--danger);
+  }
+  .step {
+    min-height: 42px;
   }
   .step-title {
     flex: 1;
     text-align: left;
-    padding: 8px 0;
+    padding: 2px 0;
+    font-size: 14.5px;
+    overflow-wrap: anywhere;
     color: var(--text);
-    word-break: break-word;
   }
   .step-title.done {
+    color: var(--text-2);
     text-decoration: line-through;
-    color: var(--text-3);
   }
   .step-input {
     flex: 1;
     border: none;
     outline: none;
     background: transparent;
-    padding: 8px 0;
-    box-shadow: 0 1px 0 var(--accent);
+    font-size: 14.5px;
   }
   .step-actions {
     display: flex;
@@ -453,128 +464,112 @@
   .mini {
     display: grid;
     place-items: center;
-    width: 26px;
-    height: 26px;
+    width: 24px;
+    height: 24px;
     border-radius: 6px;
     color: var(--text-2);
   }
   .mini:hover {
-    background: var(--surface-hover);
+    background: var(--fill);
     color: var(--text);
   }
   .add-step {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    height: 42px;
-    padding-left: 2px;
-    color: var(--accent);
+    min-height: 42px;
+  }
+  .add-dot {
+    display: grid;
+    place-items: center;
+    width: 19px;
+    height: 19px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    flex: none;
   }
   .add-step input {
     flex: 1;
     border: none;
     outline: none;
     background: transparent;
+    font-size: 14.5px;
   }
   .add-step input::placeholder {
-    color: var(--accent);
-  }
-  .row-btn {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    width: 100%;
-    min-height: 50px;
-    padding: 8px 10px 8px 16px;
     color: var(--text-2);
-    text-align: left;
-    transition: background 0.12s;
   }
-  .row-btn:hover {
-    background: var(--surface-hover);
-  }
-  .row-btn.on {
-    color: var(--accent);
-  }
-  .row-btn.overdue {
-    color: var(--danger);
-  }
-  .label {
-    flex: 1;
+  .sub {
+    position: relative;
     display: flex;
     flex-direction: column;
+    gap: 10px;
+    padding: 10px 14px 12px 54px;
   }
-  .label small {
-    color: var(--text-2);
-    font-size: 12px;
-  }
-  .clear {
-    display: grid;
-    place-items: center;
-    width: 26px;
-    height: 26px;
-    border-radius: 6px;
-    color: var(--text-2);
-  }
-  .clear:hover {
-    background: var(--surface-2);
-    color: var(--text);
-  }
-  .sep {
-    height: 1px;
-    background: var(--border);
-    margin: 0 12px;
-  }
-  .picker {
+  .chips {
     display: flex;
-    gap: 8px;
-    padding: 4px 12px 12px 48px;
+    flex-wrap: wrap;
+    gap: 6px;
   }
-  .picker input {
-    flex: 1;
-    min-width: 0;
-    height: 32px;
-    padding: 0 8px;
-    border-radius: 6px;
-    border: 1px solid var(--border-strong);
-    background: var(--surface-2);
+  .chip {
+    height: 26px;
+    padding: 0 10px;
+    border-radius: 13px;
+    font-size: 12.5px;
+    font-weight: 500;
+    background: var(--fill-2);
+    color: var(--text);
+    transition: background 0.15s;
   }
-  .btn {
-    height: 32px;
-    padding: 0 14px;
-    border-radius: 6px;
-    font-weight: 600;
+  .chip:hover {
+    background: var(--fill);
   }
-  .btn.primary {
+  .chip.on {
     background: var(--accent);
     color: #fff;
   }
-  .notes textarea {
-    display: block;
-    width: 100%;
-    min-height: 120px;
-    resize: vertical;
+  .sub input {
+    height: 32px;
+    padding: 0 10px;
+    border-radius: 8px;
     border: none;
+    background: var(--fill-2);
+    font-size: 13.5px;
     outline: none;
-    background: transparent;
-    padding: 12px 16px;
-    line-height: 1.5;
   }
-  footer {
-    display: flex;
+  .sub input:focus {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+  .select {
+    position: relative;
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 10px;
-    border-top: 1px solid var(--border);
-  }
-  .meta {
-    flex: 1;
-    text-align: center;
-    font-size: 12px;
+    gap: 4px;
     color: var(--text-2);
   }
-  .danger:hover {
+  .select select {
+    appearance: none;
+    -webkit-appearance: none;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    color: var(--text-2);
+    text-align: right;
+    padding-right: 2px;
+    max-width: 150px;
+    outline: none;
+  }
+  .danger {
+    justify-content: center;
+    gap: 8px;
     color: var(--danger);
+    font-weight: 500;
+    font-size: 14.5px;
+  }
+  .danger:hover {
+    background: color-mix(in srgb, var(--danger) 8%, transparent);
+  }
+  .foot {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-3);
   }
   @media (max-width: 900px) {
     .panel {

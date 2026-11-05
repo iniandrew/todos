@@ -19,7 +19,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="overlay" transition:fade={{ duration: 150 }} onpointerdown={(e) => e.target === e.currentTarget && onclose()}>
+<div class="overlay" transition:fade={{ duration: 180 }} onpointerdown={(e) => e.target === e.currentTarget && onclose()}>
   <div
     bind:this={el}
     class="dialog"
@@ -28,7 +28,7 @@
     aria-label={label}
     tabindex="-1"
     style="width:min({width}px, calc(100vw - 32px))"
-    transition:scale={{ start: 0.96, duration: 160 }}
+    transition:scale={{ start: 0.94, duration: 220, opacity: 0 }}
     onkeydown={(e) => {
       if (e.key === "Escape") {
         e.stopPropagation();
@@ -48,15 +48,12 @@
     display: grid;
     place-items: center;
     background: var(--overlay);
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
   }
   .dialog {
     max-height: calc(100vh - 48px);
     overflow-y: auto;
-    border-radius: 14px;
-    background: var(--surface);
-    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--grouped-bg);
     box-shadow: var(--shadow-lg);
     outline: none;
   }
