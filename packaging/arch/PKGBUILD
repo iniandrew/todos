@@ -1,0 +1,34 @@
+# Maintainer: iniandrew
+# Builds Todos from source on Arch Linux (and derivatives: Manjaro, EndeavourOS, ...).
+#
+#   cd packaging/arch && makepkg -si
+#
+pkgname=todos-tauri
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="A beautiful cross-platform to-do app inspired by Microsoft To Do (Rust + Tauri)"
+arch=('x86_64' 'aarch64')
+url="https://github.com/iniandrew/todos"
+license=('custom')
+depends=('webkit2gtk-4.1' 'gtk3' 'libnotify' 'hicolor-icon-theme')
+makedepends=('rust' 'cargo' 'nodejs' 'pnpm' 'git')
+provides=('todos')
+conflicts=('todos')
+source=("$pkgname::git+$url.git")
+sha256sums=('SKIP')
+
+build() {
+  cd "$srcdir/$pkgname"
+  pnpm install --frozen-lockfile
+  pnpm tauri build --no-bundle
+}
+
+package() {
+  cd "$srcdir/$pkgname"
+  install -Dm755 src-tauri/target/release/todos "$pkgdir/usr/bin/todos"
+  install -Dm644 packaging/linux/todos.desktop "$pkgdir/usr/share/applications/com.iniandrew.todos.desktop"
+  install -Dm644 src-tauri/icons/32x32.png "$pkgdir/usr/share/icons/hicolor/32x32/apps/todos.png"
+  install -Dm644 src-tauri/icons/128x128.png "$pkgdir/usr/share/icons/hicolor/128x128/apps/todos.png"
+  install -Dm644 src-tauri/icons/128x128@2x.png "$pkgdir/usr/share/icons/hicolor/256x256/apps/todos.png"
+  install -Dm644 src-tauri/icons/icon.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/todos.svg"
+}

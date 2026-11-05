@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Todos
+GenericName=To-do list
+Comment=A beautiful cross-platform to-do app
+Exec=todos
+Icon=todos
+Terminal=false
+Categories=Office;ProjectManagement;Utility;
+Keywords=todo;task;list;reminder;
+StartupWMClass=todos
