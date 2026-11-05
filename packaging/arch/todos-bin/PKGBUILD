@@ -4,7 +4,7 @@
 #   cd packaging/arch/todos-bin && makepkg -si
 #
 pkgname=todos-bin
-pkgver=0.1.0
+pkgver=0.2.0
 pkgrel=1
 pkgdesc="A clean, cross-platform to-do app with an Apple-inspired design (Rust + Tauri)"
 arch=('x86_64')
@@ -14,7 +14,7 @@ depends=('webkit2gtk-4.1' 'gtk3' 'libnotify' 'hicolor-icon-theme')
 provides=('todos')
 conflicts=('todos' 'todos-tauri')
 source=("$url/releases/download/v$pkgver/todos-$pkgver-linux-x86_64.tar.gz")
-sha256sums=('c611206d99287f91e044efb45cd15340cf907cf187586623ab6eb27e1988882d')
+sha256sums=('1537454ee023d7abfa269962b0289ff2bb77d0a56332eb4f5571e973dc9fcfc9')
 
 package() {
   cd "$srcdir/todos-$pkgver-linux-x86_64"

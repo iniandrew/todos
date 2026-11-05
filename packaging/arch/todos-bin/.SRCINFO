@@ -1,6 +1,6 @@
 pkgbase = todos-bin
 	pkgdesc = A clean, cross-platform to-do app with an Apple-inspired design (Rust + Tauri)
-	pkgver = 0.1.0
+	pkgver = 0.2.0
 	pkgrel = 1
 	url = https://github.com/iniandrew/todos
 	arch = x86_64
@@ -12,7 +12,7 @@ pkgbase = todos-bin
 	provides = todos
 	conflicts = todos
 	conflicts = todos-tauri
-	source = https://github.com/iniandrew/todos/releases/download/v0.1.0/todos-0.1.0-linux-x86_64.tar.gz
-	sha256sums = c611206d99287f91e044efb45cd15340cf907cf187586623ab6eb27e1988882d
+	source = https://github.com/iniandrew/todos/releases/download/v0.2.0/todos-0.2.0-linux-x86_64.tar.gz
+	sha256sums = 1537454ee023d7abfa269962b0289ff2bb77d0a56332eb4f5571e973dc9fcfc9
 
 pkgname = todos-bin
