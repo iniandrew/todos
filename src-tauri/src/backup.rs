@@ -109,9 +109,11 @@ pub fn parse(json: &str) -> AppResult<Backup> {
     }
     match header.version {
         Some(v) if v <= VERSION => {}
-        Some(v) => return Err(AppError::Invalid(format!(
+        Some(v) => {
+            return Err(AppError::Invalid(format!(
             "this backup was made by a newer version of Todos (format v{v}); please update the app"
-        ))),
+        )))
+        }
         None => return Err(AppError::Invalid("backup has no version".into())),
     }
     serde_json::from_str(json).map_err(|e| AppError::Invalid(format!("damaged backup file: {e}")))
