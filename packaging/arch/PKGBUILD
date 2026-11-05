@@ -4,7 +4,7 @@
 #   cd packaging/arch && makepkg -si
 #
 pkgname=todos-tauri
-pkgver=0.1.0
+pkgver=0.2.0
 pkgrel=1
 pkgdesc="A beautiful cross-platform to-do app inspired by Microsoft To Do (Rust + Tauri)"
 arch=('x86_64' 'aarch64')

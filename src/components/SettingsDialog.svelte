@@ -20,13 +20,13 @@
   import { store, type ColorScheme } from "../lib/store.svelte";
   import { getTheme } from "../lib/themes";
   import Modal from "./Modal.svelte";
+  import { version } from "../../package.json";
 
   const schemes: { value: ColorScheme; label: () => string }[] = [
     { value: "light", label: () => t("settings.theme.light") },
     { value: "dark", label: () => t("settings.theme.dark") },
     { value: "system", label: () => t("settings.theme.system") },
   ];
-  const version = "0.1.0";
   const close = () => (store.settingsOpen = false);
 
   const autoBackup = $derived(store.settings.autoBackup !== "off");

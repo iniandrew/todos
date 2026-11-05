@@ -117,7 +117,7 @@ You can also use the AppImage, or the portable tarball `todos-<version>-linux-x8
 
 ### Automated releases
 
-Pushing a tag like `v0.1.0` starts `.github/workflows/release.yml`. It builds on Windows, macOS (universal) and Linux, and attaches every installer to a draft GitHub release.
+Bump the version in `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`, then run the **Release** workflow from the Actions tab (or push a matching `v<version>` tag). It builds on Windows, macOS (universal) and Linux and publishes every installer, plus the portable Linux tarball, as release `v<version>`.
 
 ---
 
@@ -167,4 +167,4 @@ Pengguna Arch bisa memilih:
 - `packaging/arch` (`makepkg -si`): build dari source.
 - AppImage dari release.
 
-Push tag `v*` (misalnya `v0.1.0`) ke GitHub untuk membuat installer semua platform secara otomatis lewat GitHub Actions.
+Untuk rilis baru: naikkan versi di `package.json`, `src-tauri/Cargo.toml`, dan `src-tauri/tauri.conf.json`, lalu jalankan workflow **Release** dari tab Actions. Installer semua platform akan dibuat otomatis.

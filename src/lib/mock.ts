@@ -1,3 +1,5 @@
+import { version } from "../../package.json";
+
 /**
  * In-browser implementation of the backend, used when the UI runs outside
  * Tauri (`pnpm dev` in a normal browser). Data lives in localStorage.
@@ -257,7 +259,7 @@ export const mock = {
     return clone({
       format: "todos-backup",
       version: 1,
-      appVersion: "0.1.0",
+      appVersion: version,
       exportedAt: now(),
       lists: db.lists,
       tasks: db.tasks,

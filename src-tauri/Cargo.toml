@@ -1,6 +1,6 @@
 [package]
 name = "todos"
-version = "0.1.0"
+version = "0.2.0"
 description = "A beautiful cross-platform to-do app"
 authors = ["iniandrew"]
 edition = "2021"
