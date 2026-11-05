@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import ConfirmDialog from "./components/ConfirmDialog.svelte";
   import ImportDialog from "./components/ImportDialog.svelte";
+  import UpdateDialog from "./components/UpdateDialog.svelte";
   import DetailPanel from "./components/DetailPanel.svelte";
   import Menu from "./components/Menu.svelte";
   import SettingsDialog from "./components/SettingsDialog.svelte";
@@ -12,6 +13,7 @@
   import { menu } from "./lib/menu.svelte";
   import { handleShortcut } from "./lib/shortcuts";
   import { store } from "./lib/store.svelte";
+  import { updates } from "./lib/updates.svelte";
   import { inTauri } from "./lib/api";
   import { isMac } from "./lib/shortcuts";
 
@@ -34,7 +36,10 @@
     };
     dark.addEventListener("change", onDark);
     small.addEventListener("change", onSmall);
-    store.init().catch((e) => store.toast(String(e)));
+    store
+      .init()
+      .then(() => updates.init())
+      .catch((e) => store.toast(String(e)));
     return () => {
       dark.removeEventListener("change", onDark);
       small.removeEventListener("change", onSmall);
@@ -62,7 +67,7 @@
 </script>
 
 <svelte:window
-  onkeydown={(e) => handleShortcut(e, !!(store.settingsOpen || store.confirm || store.importPreview || menu.current))}
+  onkeydown={(e) => handleShortcut(e, !!(store.settingsOpen || store.confirm || store.importPreview || updates.dialogOpen || menu.current))}
   {oncontextmenu}
 />
 
@@ -91,6 +96,9 @@
 {/if}
 {#if store.settingsOpen}
   <SettingsDialog />
+{/if}
+{#if updates.dialogOpen}
+  <UpdateDialog />
 {/if}
 {#if store.importPreview}
   <ImportDialog preview={store.importPreview} />

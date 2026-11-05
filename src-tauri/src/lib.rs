@@ -17,6 +17,8 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .setup(|app| {
             let dir = app.path().app_data_dir()?;
@@ -54,6 +56,8 @@ pub fn run() {
             commands::import_backup,
             commands::list_auto_backups,
             commands::open_data_folder,
+            commands::update_mode,
+            commands::open_release_page,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Todos");

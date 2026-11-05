@@ -8,6 +8,10 @@ and this project follows [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **In-app updates**: Todos checks for new versions (at startup and once a day), shows what's new, and on
+  Windows, macOS and the AppImage installs the update and restarts with one click. Updates are signature-checked
+  before installing. Copies installed with `.deb`, `.rpm` or the Arch package get a notification with a download
+  link instead. Turn automatic checks off in *Settings → Updates*.
 - **Backup & restore** in *Settings → Data*:
   - Export everything (lists, tasks, steps, settings) to a JSON backup file.
   - Import a backup with a preview of its contents, then choose **Merge** (adds and updates, never deletes)

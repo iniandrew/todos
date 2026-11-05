@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { CalendarDays, House, PanelLeftClose, Pencil, Plus, Search, Settings, Star, Sun, Trash2, X } from "@lucide/svelte";
+  import { ArrowDownToLine, CalendarDays, House, PanelLeftClose, Pencil, Plus, Search, Settings, Star, Sun, Trash2, X } from "@lucide/svelte";
   import type { Component } from "svelte";
   import { dndzone, type DndEvent } from "svelte-dnd-action";
   import { flip } from "svelte/animate";
@@ -7,6 +7,7 @@
   import { listIcon } from "../lib/listIcons";
   import { menu } from "../lib/menu.svelte";
   import { store } from "../lib/store.svelte";
+  import { updates } from "../lib/updates.svelte";
   import { DEFAULT_VIEW_THEMES, getTheme } from "../lib/themes";
   import type { SmartView, TaskList, ViewId } from "../lib/types";
 
@@ -129,6 +130,17 @@
       {/each}
     </div>
   </nav>
+
+  {#if updates.available && (updates.status === "available" || updates.status === "downloading" || updates.status === "installing")}
+    <button class="update" onclick={() => (updates.dialogOpen = true)}>
+      <span class="update-icon"><ArrowDownToLine size={15} strokeWidth={2.4} /></span>
+      <span class="update-text">
+        <b>{t("update.banner")}</b>
+        <small>Todos {updates.available.version}</small>
+      </span>
+      <span class="update-view">{t("update.view")}</span>
+    </button>
+  {/if}
 
   <div class="bottom">
     <button class="add-list" onclick={() => store.createList()}>
@@ -315,6 +327,53 @@
     font-size: 13px;
     color: var(--text-2);
     font-variant-numeric: tabular-nums;
+  }
+  .update {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 12px 4px;
+    padding: 9px 10px;
+    border-radius: 11px;
+    background: var(--cell);
+    box-shadow: var(--shadow-sm);
+    text-align: left;
+    animation: rise 0.35s var(--spring);
+  }
+  :global([data-theme="dark"]) .update {
+    background: var(--fill-2);
+  }
+  @keyframes rise {
+    from {
+      transform: translateY(8px);
+      opacity: 0;
+    }
+  }
+  .update-icon {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    flex: none;
+  }
+  .update-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    font-size: 13px;
+  }
+  .update-text small {
+    font-size: 12px;
+    color: var(--text-2);
+  }
+  .update-view {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
   }
   .bottom {
     display: flex;

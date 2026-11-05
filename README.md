@@ -21,6 +21,12 @@ A fast, clean to-do app with an Apple-inspired design. It runs on **Windows, mac
   - macOS: `~/Library/Application Support/com.iniandrew.todos/todos.db`
   - Windows: `%APPDATA%\com.iniandrew.todos\todos.db`
 
+## Updates
+
+Todos checks GitHub Releases for a new version at startup and once a day. You can also check manually in **Settings → Updates**. On Windows, macOS and the AppImage it shows what's new and installs the update with **Update & restart**. Every update is verified against the public key in `src-tauri/tauri.conf.json` before it is installed. Copies installed from `.deb`, `.rpm` or an Arch package are managed by your package manager, so they only get a notification with a download link.
+
+**Maintainers:** release builds sign the updates with a private key that is stored as two repository secrets, `TAURI_SIGNING_PRIVATE_KEY` (the key file's contents) and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Without them the Release workflow still builds installers, but it skips the update files and prints a warning. Keep a backup of the key: if it is lost, installed apps can no longer verify new updates.
+
 ## Backup & restore
 
 There is no cloud sync. Your data is a local SQLite database. In **Settings → Data** you can:
@@ -135,6 +141,10 @@ Add a section for the new version to `CHANGELOG.md`, bump the version in `packag
 - **Pintasan keyboard**: daftar lengkapnya ada di Pengaturan.
 - **Dua bahasa**: English dan Bahasa Indonesia, bisa diganti di Pengaturan.
 - **Data lokal**: semua tersimpan di database SQLite di komputermu sendiri.
+
+### Pembaruan otomatis
+
+Todos mengecek versi baru dari GitHub Releases saat dibuka dan sekali sehari. Pengecekan juga bisa dilakukan manual di **Pengaturan → Pembaruan**. Di Windows, macOS, dan AppImage, pembaruan bisa langsung dipasang dengan **Perbarui & mulai ulang**, dan tanda tangannya selalu diverifikasi dulu. Instalasi lewat `.deb`, `.rpm`, atau paket Arch hanya mendapat notifikasi berisi link unduhan.
 
 ### Backup & restore
 

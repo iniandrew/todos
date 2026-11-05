@@ -1,8 +1,13 @@
 name: Release
 
 # Builds installers for every platform and publishes them as a GitHub release
-# tagged `v<version>` (the version comes from src-tauri/tauri.conf.json).
+# tagged `v<version>` (the version comes from src-tauri/tauri.conf.json), with
+# release notes from CHANGELOG.md.
 # Trigger it by pushing a matching tag, or run it manually from the Actions tab.
+#
+# In-app updates: when the TAURI_SIGNING_PRIVATE_KEY (and
+# TAURI_SIGNING_PRIVATE_KEY_PASSWORD) secrets are set, the build also produces
+# signed updater artifacts and a latest.json that installed apps check.
 on:
   push:
     tags: ["v*"]
@@ -23,6 +28,9 @@ jobs:
           - platform: macos-latest
             args: "--target universal-apple-darwin"
     runs-on: ${{ matrix.platform }}
+    env:
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
 
@@ -49,16 +57,34 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Prepare release notes and updater config
+        id: prep
+        shell: bash
+        run: |
+          version="$(jq -r .version src-tauri/tauri.conf.json)"
+          {
+            echo "notes<<RELEASE_NOTES_EOF"
+            scripts/release-notes.sh "$version"
+            echo "RELEASE_NOTES_EOF"
+          } >> "$GITHUB_OUTPUT"
+          if [ -n "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            echo "updater=--config src-tauri/tauri.release.conf.json" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::TAURI_SIGNING_PRIVATE_KEY is not set; building without in-app update artifacts."
+            echo "updater=" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: v__VERSION__
           releaseName: "Todos v__VERSION__"
-          releaseBody: "See the assets below to download and install this version."
+          releaseBody: ${{ steps.prep.outputs.notes }}
           releaseDraft: false
           prerelease: false
-          args: ${{ matrix.args }}
+          includeUpdaterJson: true
+          args: ${{ matrix.args }} ${{ steps.prep.outputs.updater }}
 
       - name: Upload portable Linux tarball
         if: matrix.platform == 'ubuntu-22.04'
@@ -70,6 +96,8 @@ jobs:
           tarball="$(packaging/linux/make-tarball.sh dist-linux)"
           gh release upload "v${version}" "${tarball}" "${tarball}.sha256" --clobber
 
+  # Re-apply the notes once every job has finished, so they're correct even if
+  # the release already existed (tauri-action doesn't update an existing body).
   notes:
     needs: build
     permissions:

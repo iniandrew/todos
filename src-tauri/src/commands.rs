@@ -198,3 +198,36 @@ pub fn open_data_folder(app: AppHandle, state: State<AppState>) -> AppResult<()>
         .open_path(state.data_dir.to_string_lossy(), None::<&str>)
         .map_err(|e| AppError::Invalid(e.to_string()))
 }
+
+// ---------------------------------------------------------------------------
+// Updates
+// ---------------------------------------------------------------------------
+
+/// How this build can be updated.
+///
+/// `inApp`: the updater can replace the app (Windows, macOS, AppImage).
+/// `notify`: installed through a package manager (.deb, .rpm, Arch), so we
+/// only tell the user about the new version.
+#[tauri::command]
+pub fn update_mode() -> &'static str {
+    if cfg!(target_os = "linux") && std::env::var_os("APPIMAGE").is_none() {
+        "notify"
+    } else {
+        "inApp"
+    }
+}
+
+/// Opens the GitHub release page for `version` (e.g. "0.3.0") in the browser.
+#[tauri::command]
+pub fn open_release_page(app: AppHandle, version: String) -> AppResult<()> {
+    if !version
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '-')
+    {
+        return Err(AppError::Invalid(format!("invalid version: {version}")));
+    }
+    let url = format!("https://github.com/iniandrew/todos/releases/tag/v{version}");
+    app.opener()
+        .open_url(url, None::<&str>)
+        .map_err(|e| AppError::Invalid(e.to_string()))
+}

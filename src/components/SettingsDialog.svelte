@@ -1,5 +1,6 @@
 <script lang="ts">
   import {
+    ArrowDownToLine,
     ChevronRight,
     ChevronsUpDown,
     Download,
@@ -16,6 +17,7 @@
   import { api, inTauri } from "../lib/api";
   import { i18n, LANGUAGES, t } from "../lib/i18n/index.svelte";
   import type { BackupFile } from "../lib/types";
+  import { updates } from "../lib/updates.svelte";
   import { SHORTCUTS } from "../lib/shortcuts";
   import { store, type ColorScheme } from "../lib/store.svelte";
   import { getTheme } from "../lib/themes";
@@ -167,6 +169,41 @@
       </section>
     {/if}
 
+    {#if updates.supported}
+      <div class="group-label">{t("settings.updates")}</div>
+      <section class="group">
+        <div class="row">
+          <span class="glyph" style="background:{getTheme('blue').accent}"><ArrowDownToLine size={16} strokeWidth={2.2} /></span>
+          <span class="row-label">
+            {t("update.version", { version: updates.current })}
+            <small>
+              {#if updates.status === "checking"}{t("update.checking")}
+              {:else if updates.available}{t("update.availableShort", { version: updates.available.version })}
+              {:else if updates.status === "upToDate"}{t("update.upToDate")}
+              {:else if updates.status === "error"}{t("update.failed")}
+              {/if}
+            </small>
+          </span>
+          {#if updates.available}
+            <button class="pill-btn" onclick={() => (updates.dialogOpen = true)}>{t("update.view")}</button>
+          {:else}
+            <button class="pill-btn" disabled={updates.status === "checking"} onclick={() => updates.check()}>{t("update.checkNow")}</button>
+          {/if}
+        </div>
+        <label class="row">
+          <span class="row-label">{t("update.auto")}</span>
+          <span class="switch">
+            <input
+              type="checkbox"
+              checked={updates.autoEnabled}
+              onchange={(e) => store.saveSetting("updateCheck", e.currentTarget.checked ? "on" : "off")}
+            />
+            <span></span>
+          </span>
+        </label>
+      </section>
+    {/if}
+
     <div class="group-label">{t("settings.shortcuts")}</div>
     <section class="group">
       {#each SHORTCUTS as s (s.label)}
@@ -307,6 +344,22 @@
     padding: 6px 10px;
     font-size: 13px;
     color: var(--text-2);
+  }
+  .pill-btn {
+    height: 28px;
+    padding: 0 12px;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    flex: none;
+  }
+  .pill-btn:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
+  }
+  .pill-btn:disabled {
+    opacity: 0.5;
   }
   .row.compact {
     min-height: 38px;
