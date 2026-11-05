@@ -1,0 +1,25 @@
+name: Release notes
+
+# Writes the GitHub release notes for v<version> from CHANGELOG.md
+# (version comes from src-tauri/tauri.conf.json). Runs at the end of the
+# Release workflow, or manually from the Actions tab to fix up the notes.
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: write
+
+jobs:
+  notes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update release notes from CHANGELOG.md
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version="$(jq -r .version src-tauri/tauri.conf.json)"
+          scripts/release-notes.sh "$version" > release-notes.md
+          gh release edit "v${version}" --title "Todos v${version}" --notes-file release-notes.md

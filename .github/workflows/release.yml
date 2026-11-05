@@ -69,3 +69,9 @@ jobs:
           version="$(jq -r .version src-tauri/tauri.conf.json)"
           tarball="$(packaging/linux/make-tarball.sh dist-linux)"
           gh release upload "v${version}" "${tarball}" "${tarball}.sha256" --clobber
+
+  notes:
+    needs: build
+    permissions:
+      contents: write
+    uses: ./.github/workflows/release-notes.yml

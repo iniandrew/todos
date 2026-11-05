@@ -33,6 +33,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
+      - name: Release notes script
+        run: scripts/release-notes.sh "$(jq -r .version src-tauri/tauri.conf.json)" > /dev/null
       - run: pnpm build
 
       - name: Rust fmt

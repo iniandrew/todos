@@ -117,7 +117,7 @@ You can also use the AppImage, or the portable tarball `todos-<version>-linux-x8
 
 ### Automated releases
 
-Bump the version in `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`, then run the **Release** workflow from the Actions tab (or push a matching `v<version>` tag). It builds on Windows, macOS (universal) and Linux and publishes every installer, plus the portable Linux tarball, as release `v<version>`.
+Add a section for the new version to `CHANGELOG.md`, bump the version in `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`, then run the **Release** workflow from the Actions tab (or push a matching `v<version>` tag). It builds on Windows, macOS (universal) and Linux and publishes every installer, plus the portable Linux tarball, as release `v<version>`, with release notes generated from `CHANGELOG.md`.
 
 ---
 
@@ -167,4 +167,4 @@ Pengguna Arch bisa memilih:
 - `packaging/arch` (`makepkg -si`): build dari source.
 - AppImage dari release.
 
-Untuk rilis baru: naikkan versi di `package.json`, `src-tauri/Cargo.toml`, dan `src-tauri/tauri.conf.json`, lalu jalankan workflow **Release** dari tab Actions. Installer semua platform akan dibuat otomatis.
+Untuk rilis baru: tambahkan bagian versi baru di `CHANGELOG.md`, naikkan versi di `package.json`, `src-tauri/Cargo.toml`, dan `src-tauri/tauri.conf.json`, lalu jalankan workflow **Release** dari tab Actions. Installer semua platform dan release notes akan dibuat otomatis.
