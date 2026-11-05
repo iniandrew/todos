@@ -1,0 +1,18 @@
+pkgbase = todos-bin
+	pkgdesc = A clean, cross-platform to-do app with an Apple-inspired design (Rust + Tauri)
+	pkgver = 0.1.0
+	pkgrel = 1
+	url = https://github.com/iniandrew/todos
+	arch = x86_64
+	license = custom
+	depends = webkit2gtk-4.1
+	depends = gtk3
+	depends = libnotify
+	depends = hicolor-icon-theme
+	provides = todos
+	conflicts = todos
+	conflicts = todos-tauri
+	source = https://github.com/iniandrew/todos/releases/download/v0.1.0/todos-0.1.0-linux-x86_64.tar.gz
+	sha256sums = SKIP
+
+pkgname = todos-bin

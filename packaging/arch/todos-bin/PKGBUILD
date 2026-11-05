@@ -1,0 +1,27 @@
+# Maintainer: iniandrew
+# Installs the prebuilt Todos binary from the GitHub release (no compiling).
+#
+#   cd packaging/arch/todos-bin && makepkg -si
+#
+pkgname=todos-bin
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="A clean, cross-platform to-do app with an Apple-inspired design (Rust + Tauri)"
+arch=('x86_64')
+url="https://github.com/iniandrew/todos"
+license=('custom')
+depends=('webkit2gtk-4.1' 'gtk3' 'libnotify' 'hicolor-icon-theme')
+provides=('todos')
+conflicts=('todos' 'todos-tauri')
+source=("$url/releases/download/v$pkgver/todos-$pkgver-linux-x86_64.tar.gz")
+sha256sums=('SKIP')
+
+package() {
+  cd "$srcdir/todos-$pkgver-linux-x86_64"
+  install -Dm755 todos "$pkgdir/usr/bin/todos"
+  install -Dm644 todos.desktop "$pkgdir/usr/share/applications/com.iniandrew.todos.desktop"
+  install -Dm644 icons/32x32.png "$pkgdir/usr/share/icons/hicolor/32x32/apps/todos.png"
+  install -Dm644 icons/128x128.png "$pkgdir/usr/share/icons/hicolor/128x128/apps/todos.png"
+  install -Dm644 icons/256x256.png "$pkgdir/usr/share/icons/hicolor/256x256/apps/todos.png"
+  install -Dm644 icons/todos.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/todos.svg"
+}

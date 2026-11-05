@@ -59,3 +59,13 @@ jobs:
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
+
+      - name: Upload portable Linux tarball
+        if: matrix.platform == 'ubuntu-22.04'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version="$(jq -r .version src-tauri/tauri.conf.json)"
+          tarball="$(packaging/linux/make-tarball.sh dist-linux)"
+          gh release upload "v${version}" "${tarball}" "${tarball}.sha256" --clobber

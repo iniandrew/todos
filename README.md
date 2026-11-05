@@ -33,7 +33,8 @@ src-tauri/           Rust backend
   src/db.rs          SQLite schema, migrations, all queries (+ unit tests)
   src/commands.rs    #[tauri::command] handlers
   src/reminders.rs   background thread → desktop notifications
-packaging/arch/      PKGBUILD for Arch Linux
+packaging/arch/      PKGBUILDs for Arch Linux (source build + todos-bin)
+packaging/linux/     .desktop file and portable tarball script
 .github/workflows/   CI + cross-platform release builds
 ```
 
@@ -82,18 +83,27 @@ The installers end up in `src-tauri/target/release/bundle/`:
 | --- | --- |
 | Windows | `.msi`, `-setup.exe` (NSIS) |
 | macOS | `.app`, `.dmg` (`pnpm tauri build --target universal-apple-darwin` builds a universal Intel + Apple Silicon app) |
-| Linux | `.deb`, `.rpm`, `.AppImage` (the AppImage runs on almost every distro) |
+| Linux | `.deb`, `.rpm`, `.AppImage` (the AppImage runs on almost every distro). The release workflow also uploads a portable `.tar.gz` (`packaging/linux/make-tarball.sh`) |
 
 To build only some formats, pass e.g. `pnpm tauri build --bundles deb,appimage`.
 
 ### Arch Linux
+
+**Prebuilt (`todos-bin`, no compiling)** installs the portable binary from the latest release:
+
+```bash
+cd packaging/arch/todos-bin
+makepkg -si
+```
+
+**From source** builds with Rust and pnpm:
 
 ```bash
 cd packaging/arch
 makepkg -si
 ```
 
-You can also use the AppImage from a release.
+You can also use the AppImage, or the portable tarball `todos-<version>-linux-x86_64.tar.gz` from a release. Extract it and run `./todos`. The tarball needs `webkit2gtk-4.1`, `gtk3` and `libnotify` installed.
 
 ### Automated releases
 
@@ -132,6 +142,11 @@ pnpm tauri dev
 pnpm tauri build
 ```
 
-Hasilnya ada di `src-tauri/target/release/bundle/`: `.msi`/`.exe` untuk Windows, `.dmg`/`.app` untuk macOS, serta `.deb`/`.rpm`/`.AppImage` untuk Linux. Pengguna Arch bisa memakai `packaging/arch/PKGBUILD` (`makepkg -si`) atau langsung pakai AppImage.
+Hasilnya ada di `src-tauri/target/release/bundle/`: `.msi`/`.exe` untuk Windows, `.dmg`/`.app` untuk macOS, serta `.deb`/`.rpm`/`.AppImage` untuk Linux. Untuk Linux tersedia juga tarball portabel `todos-<versi>-linux-x86_64.tar.gz` (sekitar 3 MB). Ekstrak lalu jalankan `./todos`.
+
+Pengguna Arch bisa memilih:
+- `packaging/arch/todos-bin` (`makepkg -si`): pakai binary siap pakai dari release, tanpa compile.
+- `packaging/arch` (`makepkg -si`): build dari source.
+- AppImage dari release.
 
 Push tag `v*` (misalnya `v0.1.0`) ke GitHub untuk membuat installer semua platform secara otomatis lewat GitHub Actions.
