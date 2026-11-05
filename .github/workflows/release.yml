@@ -1,7 +1,8 @@
 name: Release
 
-# Push a tag like `v0.1.0` to build installers for every platform
-# and attach them to a draft GitHub release.
+# Builds installers for every platform and publishes them as a GitHub release
+# tagged `v<version>` (the version comes from src-tauri/tauri.conf.json).
+# Trigger it by pushing a matching tag, or run it manually from the Actions tab.
 on:
   push:
     tags: ["v*"]
@@ -52,9 +53,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "Todos ${{ github.ref_name }}"
+          tagName: v__VERSION__
+          releaseName: "Todos v__VERSION__"
           releaseBody: "See the assets below to download and install this version."
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
