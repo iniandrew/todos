@@ -3,14 +3,25 @@ import { todayKey } from "./dates";
 import { i18n, t } from "./i18n/index.svelte";
 import { playDing } from "./sound";
 import { DEFAULT_VIEW_THEMES, getTheme, themeForIndex, type ListTheme } from "./themes";
-import type { Counts, DueReminder, NewTask, Task, TaskList, TaskPatch, ViewId } from "./types";
+import type {
+  BackupSource,
+  BackupSummary,
+  Counts,
+  DueReminder,
+  ImportMode,
+  NewTask,
+  Task,
+  TaskList,
+  TaskPatch,
+  ViewId,
+} from "./types";
 
 export type ColorScheme = "system" | "light" | "dark";
 
 export interface Toast {
   id: number;
   message: string;
-  icon?: "trash" | "bell" | "sun";
+  icon?: "trash" | "bell" | "sun" | "check";
   action?: { label: string; run: () => void };
 }
 
@@ -38,6 +49,8 @@ class AppStore {
   renamingListId = $state<string | null>(null);
   toasts = $state<Toast[]>([]);
   confirm = $state<ConfirmRequest | null>(null);
+  /** Backup picked for import, waiting for the user to choose merge/replace. */
+  importPreview = $state<{ source: BackupSource; summary: BackupSummary } | null>(null);
   ready = $state(false);
   /** Bumped to ask the add-task input to focus itself. */
   focusAddTask = $state(0);
@@ -351,6 +364,61 @@ class AppStore {
 
   toggleShowCompleted() {
     return this.saveSetting(`showCompleted.${this.view}`, this.showCompleted ? "off" : "on");
+  }
+
+  // ---------------------------------------------------------- backup & restore
+
+  async exportBackup() {
+    try {
+      const s = await api.exportBackup();
+      if (s) this.toast(t("data.exported", { n: s.tasks }), { icon: "check" });
+    } catch (e) {
+      this.toast(String(e));
+    }
+  }
+
+  async exportCsv() {
+    try {
+      if (await api.exportCsv()) this.toast(t("data.csvExported"), { icon: "check" });
+    } catch (e) {
+      this.toast(String(e));
+    }
+  }
+
+  /** Pick a backup file (or use `path`, e.g. an automatic backup) and show the import dialog. */
+  async startImport(path?: string) {
+    try {
+      const picked = path
+        ? { source: { kind: "path", path } as BackupSource, summary: await api.previewBackup(path) }
+        : await api.pickBackup();
+      if (picked) this.importPreview = picked;
+    } catch (e) {
+      this.toast(t("data.failed", { error: e instanceof Error ? e.message : String(e) }));
+    }
+  }
+
+  async confirmImport(mode: ImportMode) {
+    const pending = this.importPreview;
+    this.importPreview = null;
+    if (!pending) return;
+    try {
+      const s = await api.importBackup(pending.source, mode);
+      await this.reloadAll();
+      this.toast(t("data.imported", { n: s.tasks }), { icon: "check" });
+    } catch (e) {
+      this.toast(t("data.failed", { error: e instanceof Error ? e.message : String(e) }));
+    }
+  }
+
+  /** Reload everything after the data changed underneath us (import). */
+  private async reloadAll() {
+    const [lists, settings] = await Promise.all([api.getLists(), api.getSettings()]);
+    this.lists = lists;
+    this.settings = settings;
+    i18n.preference = settings.language ?? "system";
+    this.selectedId = null;
+    if (this.view.startsWith("list:") && !lists.some((l) => `list:${l.id}` === this.view)) this.view = "myDay";
+    await this.refresh();
   }
 
   // ------------------------------------------------------------- feedback

@@ -1,6 +1,21 @@
 <script lang="ts">
-  import { ChevronsUpDown, Globe, Trash2, Volume2 } from "@lucide/svelte";
-  import { LANGUAGES, t } from "../lib/i18n/index.svelte";
+  import {
+    ChevronRight,
+    ChevronsUpDown,
+    Download,
+    FolderOpen,
+    Globe,
+    History,
+    Sheet,
+    ShieldCheck,
+    Trash2,
+    Upload,
+    Volume2,
+  } from "@lucide/svelte";
+  import { slide } from "svelte/transition";
+  import { api, inTauri } from "../lib/api";
+  import { i18n, LANGUAGES, t } from "../lib/i18n/index.svelte";
+  import type { BackupFile } from "../lib/types";
   import { SHORTCUTS } from "../lib/shortcuts";
   import { store, type ColorScheme } from "../lib/store.svelte";
   import { getTheme } from "../lib/themes";
@@ -13,6 +28,18 @@
   ];
   const version = "0.1.0";
   const close = () => (store.settingsOpen = false);
+
+  const autoBackup = $derived(store.settings.autoBackup !== "off");
+  let backupsOpen = $state(false);
+  let backups = $state<BackupFile[] | null>(null);
+
+  async function toggleBackups() {
+    backupsOpen = !backupsOpen;
+    if (backupsOpen) backups = await api.listAutoBackups().catch(() => []);
+  }
+
+  const backupDate = (iso: string) =>
+    new Date(iso).toLocaleString(i18n.locale, { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 </script>
 
 <Modal label={t("settings.title")} width={500} onclose={close}>
@@ -83,6 +110,62 @@
         </span>
       </label>
     </section>
+
+    <div class="group-label">{t("settings.data")}</div>
+    <section class="group">
+      <button class="row action" onclick={() => store.exportBackup()}>
+        <span class="glyph" style="background:{getTheme('blue').accent}"><Download size={16} strokeWidth={2.2} /></span>
+        <span class="row-label">{t("data.export")}<small>{t("data.exportHint")}</small></span>
+        <ChevronRight size={16} strokeWidth={2.2} />
+      </button>
+      <button class="row action" onclick={() => store.exportCsv()}>
+        <span class="glyph" style="background:{getTheme('green').accent}"><Sheet size={16} strokeWidth={2.2} /></span>
+        <span class="row-label">{t("data.exportCsv")}<small>{t("data.exportCsvHint")}</small></span>
+        <ChevronRight size={16} strokeWidth={2.2} />
+      </button>
+      <button class="row action" onclick={() => store.startImport()}>
+        <span class="glyph" style="background:{getTheme('orange').accent}"><Upload size={16} strokeWidth={2.2} /></span>
+        <span class="row-label">{t("data.import")}<small>{t("data.importHint")}</small></span>
+        <ChevronRight size={16} strokeWidth={2.2} />
+      </button>
+    </section>
+
+    {#if inTauri}
+      <section class="group">
+        <label class="row">
+          <span class="glyph" style="background:{getTheme('indigo').accent}"><ShieldCheck size={16} strokeWidth={2.2} /></span>
+          <span class="row-label">{t("data.auto")}<small>{t("data.autoHint")}</small></span>
+          <span class="switch">
+            <input type="checkbox" checked={autoBackup} onchange={(e) => store.saveSetting("autoBackup", e.currentTarget.checked ? "on" : "off")} />
+            <span></span>
+          </span>
+        </label>
+        <button class="row action" onclick={toggleBackups} aria-expanded={backupsOpen}>
+          <span class="glyph" style="background:{getTheme('teal').accent}"><History size={16} strokeWidth={2.2} /></span>
+          <span class="row-label">{t("data.restoreAuto")}</span>
+          <span class="chev" class:open={backupsOpen}><ChevronRight size={16} strokeWidth={2.2} /></span>
+        </button>
+        {#if backupsOpen}
+          <div class="backups" transition:slide={{ duration: 200 }}>
+            {#if backups && backups.length === 0}
+              <div class="empty">{t("data.noBackups")}</div>
+            {/if}
+            {#each backups ?? [] as b (b.path)}
+              <button class="backup" onclick={() => store.startImport(b.path)}>
+                <span class="b-date">{backupDate(b.exportedAt)}</span>
+                {#if b.kind === "safety"}<span class="badge">{t("data.safety")}</span>{/if}
+                <span class="b-count">{t("data.tasksCount", { n: b.tasks })}</span>
+              </button>
+            {/each}
+          </div>
+        {/if}
+        <button class="row action" onclick={() => api.openDataFolder().catch((e) => store.toast(String(e)))}>
+          <span class="glyph" style="background:{getTheme('gray').accent}"><FolderOpen size={16} strokeWidth={2.2} /></span>
+          <span class="row-label">{t("data.openFolder")}</span>
+          <ChevronRight size={16} strokeWidth={2.2} />
+        </button>
+      </section>
+    {/if}
 
     <div class="group-label">{t("settings.shortcuts")}</div>
     <section class="group">
@@ -159,6 +242,71 @@
     right: 0;
     height: 1px;
     background: var(--separator);
+  }
+  .row-label small {
+    display: block;
+    margin-top: 1px;
+    font-size: 12px;
+    color: var(--text-2);
+  }
+  .row.action {
+    width: 100%;
+    text-align: left;
+    color: var(--text);
+    transition: background 0.12s;
+  }
+  .row.action:hover {
+    background: var(--hover);
+  }
+  .row.action > :global(svg),
+  .chev {
+    color: var(--text-3);
+    flex: none;
+  }
+  .chev {
+    display: grid;
+    transition: transform 0.2s var(--ease);
+  }
+  .chev.open {
+    transform: rotate(90deg);
+  }
+  .backups {
+    padding: 0 10px 8px 54px;
+  }
+  .backup {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    height: 34px;
+    padding: 0 10px;
+    border-radius: 8px;
+    text-align: left;
+    font-size: 13.5px;
+    color: var(--text);
+  }
+  .backup:hover {
+    background: var(--hover);
+  }
+  .b-date {
+    flex: 1;
+  }
+  .b-count {
+    font-size: 12.5px;
+    color: var(--text-2);
+  }
+  .badge {
+    padding: 1px 7px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+  .empty {
+    padding: 6px 10px;
+    font-size: 13px;
+    color: var(--text-2);
   }
   .row.compact {
     min-height: 38px;

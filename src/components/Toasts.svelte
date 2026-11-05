@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Bell, Info, Trash2 } from "@lucide/svelte";
+  import { Bell, CircleCheck, Info, Trash2 } from "@lucide/svelte";
   import { flip } from "svelte/animate";
   import { fly } from "svelte/transition";
   import { store } from "../lib/store.svelte";
@@ -9,7 +9,7 @@
   {#each store.toasts as toast (toast.id)}
     <div class="toast" animate:flip={{ duration: 220 }} in:fly={{ y: 24, duration: 320 }} out:fly={{ y: 12, duration: 180 }}>
       <span class="ico">
-        {#if toast.icon === "trash"}<Trash2 size={15} />{:else if toast.icon === "bell"}<Bell size={15} />{:else}<Info size={15} />{/if}
+        {#if toast.icon === "trash"}<Trash2 size={15} />{:else if toast.icon === "bell"}<Bell size={15} />{:else if toast.icon === "check"}<CircleCheck size={15} />{:else}<Info size={15} />{/if}
       </span>
       <span class="msg">{toast.message}</span>
       {#if toast.action}

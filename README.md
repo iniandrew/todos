@@ -21,6 +21,15 @@ A fast, clean to-do app with an Apple-inspired design. It runs on **Windows, mac
   - macOS: `~/Library/Application Support/com.iniandrew.todos/todos.db`
   - Windows: `%APPDATA%\com.iniandrew.todos\todos.db`
 
+## Backup & restore
+
+There is no cloud sync. Your data is a local SQLite database. In **Settings → Data** you can:
+
+- **Export backup**: a `todos-backup-YYYY-MM-DD.json` file with all lists, tasks, steps and settings. Use it to move data to another computer.
+- **Export to CSV**: open your tasks in Excel, Numbers or Google Sheets. This is export only.
+- **Import backup…**: shows what's in the file, then lets you **Merge** (add/update, never deletes) or **Replace all**. Before a replace, a safety copy of your current data is written automatically.
+- **Daily automatic backup** (on by default): keeps the last 7 days in `<data folder>/backups/`. Restore one with **Restore automatic backup**, and use **Open data folder** to find the files.
+
 ## Architecture
 
 ```
@@ -31,6 +40,7 @@ src/                 Svelte 5 + TypeScript UI
   components/        Sidebar, TaskListView, TaskItem, DetailPanel, Settings, …
 src-tauri/           Rust backend
   src/db.rs          SQLite schema, migrations, all queries (+ unit tests)
+  src/backup.rs      JSON export/import, CSV export, daily auto-backups (+ unit tests)
   src/commands.rs    #[tauri::command] handlers
   src/reminders.rs   background thread → desktop notifications
 packaging/arch/      PKGBUILDs for Arch Linux (source build + todos-bin)
@@ -125,6 +135,14 @@ Pushing a tag like `v0.1.0` starts `.github/workflows/release.yml`. It builds on
 - **Pintasan keyboard**: daftar lengkapnya ada di Pengaturan.
 - **Dua bahasa**: English dan Bahasa Indonesia, bisa diganti di Pengaturan.
 - **Data lokal**: semua tersimpan di database SQLite di komputermu sendiri.
+
+### Backup & restore
+
+Belum ada sync cloud, jadi semua data tersimpan di database SQLite lokal. Di **Pengaturan → Data** kamu bisa:
+- **Ekspor cadangan** ke file JSON, untuk memindahkan data ke komputer lain.
+- **Ekspor ke CSV** untuk dibuka di Excel atau Google Sheets.
+- **Impor cadangan** dengan pilihan **Gabungkan** atau **Ganti semua**. Sebelum mengganti, salinan pengaman data sekarang disimpan otomatis.
+- **Cadangan otomatis harian** menyimpan 7 hari terakhir dan bisa dipulihkan dari menu yang sama.
 
 ### Menjalankan
 

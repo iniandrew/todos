@@ -459,18 +459,36 @@ pub fn delete_task(conn: &Connection, id: &str) -> AppResult<()> {
     Ok(())
 }
 
-/// Re-insert a previously deleted task (used by "Undo").
-pub fn restore_task(conn: &mut Connection, task: &Task) -> AppResult<Task> {
-    let tx = conn.transaction()?;
-    // Fall back to the default list if the original list is gone.
-    let list_id = match get_list(&tx, &task.list_id) {
-        Ok(l) => l.id,
-        Err(_) => default_list_id(&tx)?,
-    };
-    tx.execute(
-        "INSERT OR REPLACE INTO tasks (id, list_id, title, notes, completed, completed_at, important,
+/// All tasks in every list, with steps.
+pub fn all_tasks(conn: &Connection) -> AppResult<Vec<Task>> {
+    query_tasks(
+        conn,
+        "SELECT * FROM tasks ORDER BY list_id, completed ASC, sort_order ASC",
+        [],
+    )
+}
+
+/// Insert or update a task (and its steps) in `list_id`, keeping its id.
+///
+/// Uses a real upsert instead of `INSERT OR REPLACE`: REPLACE deletes the old
+/// row first, which would cascade-delete rows that reference it.
+pub fn upsert_task(
+    conn: &Connection,
+    task: &Task,
+    list_id: &str,
+    reminder_fired: bool,
+) -> AppResult<()> {
+    conn.execute(
+        "INSERT INTO tasks (id, list_id, title, notes, completed, completed_at, important,
             due_date, reminder_at, reminder_fired, my_day_date, sort_order, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 1, ?10, ?11, ?12, ?13)",
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)
+         ON CONFLICT(id) DO UPDATE SET
+            list_id = excluded.list_id, title = excluded.title, notes = excluded.notes,
+            completed = excluded.completed, completed_at = excluded.completed_at,
+            important = excluded.important, due_date = excluded.due_date,
+            reminder_at = excluded.reminder_at, reminder_fired = excluded.reminder_fired,
+            my_day_date = excluded.my_day_date, sort_order = excluded.sort_order,
+            created_at = excluded.created_at, updated_at = excluded.updated_at",
         params![
             task.id,
             list_id,
@@ -481,6 +499,7 @@ pub fn restore_task(conn: &mut Connection, task: &Task) -> AppResult<Task> {
             task.important,
             task.due_date,
             task.reminder_at,
+            reminder_fired,
             task.my_day_date,
             task.sort_order,
             task.created_at,
@@ -488,12 +507,27 @@ pub fn restore_task(conn: &mut Connection, task: &Task) -> AppResult<Task> {
         ],
     )?;
     for s in &task.steps {
-        tx.execute(
-            "INSERT OR REPLACE INTO steps (id, task_id, title, completed, sort_order)
-             VALUES (?1, ?2, ?3, ?4, ?5)",
+        conn.execute(
+            "INSERT INTO steps (id, task_id, title, completed, sort_order)
+             VALUES (?1, ?2, ?3, ?4, ?5)
+             ON CONFLICT(id) DO UPDATE SET
+                task_id = excluded.task_id, title = excluded.title,
+                completed = excluded.completed, sort_order = excluded.sort_order",
             params![s.id, task.id, s.title, s.completed, s.sort_order],
         )?;
     }
+    Ok(())
+}
+
+/// Re-insert a previously deleted task (used by "Undo").
+pub fn restore_task(conn: &mut Connection, task: &Task) -> AppResult<Task> {
+    let tx = conn.transaction()?;
+    // Fall back to the default list if the original list is gone.
+    let list_id = match get_list(&tx, &task.list_id) {
+        Ok(l) => l.id,
+        Err(_) => default_list_id(&tx)?,
+    };
+    upsert_task(&tx, task, &list_id, true)?;
     tx.commit()?;
     get_task(conn, &task.id)
 }

@@ -78,3 +78,23 @@ export interface DueReminder {
 export type SmartView = "myDay" | "important" | "planned" | "tasks";
 /** A smart view or `list:<id>`. */
 export type ViewId = SmartView | `list:${string}`;
+
+export interface BackupSummary {
+  lists: number;
+  tasks: number;
+  steps: number;
+  exportedAt: string;
+}
+
+export interface BackupFile {
+  path: string;
+  name: string;
+  kind: "auto" | "safety";
+  exportedAt: string;
+  tasks: number;
+}
+
+export type ImportMode = "merge" | "replace";
+
+/** Where a backup to import comes from: a file path (desktop) or file contents (browser). */
+export type BackupSource = { kind: "path"; path: string } | { kind: "data"; json: string };

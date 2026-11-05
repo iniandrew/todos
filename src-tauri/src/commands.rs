@@ -1,18 +1,23 @@
 //! Thin `#[tauri::command]` wrappers around [`crate::db`].
 
 use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::{Mutex, MutexGuard};
 
 use rusqlite::Connection;
-use tauri::State;
+use tauri::{AppHandle, State};
+use tauri_plugin_opener::OpenerExt;
 
+use crate::backup::{self, BackupFile, BackupSummary, ImportMode};
 use crate::db;
 use crate::error::{AppError, AppResult};
 use crate::models::{Counts, ListPatch, NewTask, Task, TaskList, TaskPatch, View};
 
 pub struct AppState {
     pub db: Mutex<Connection>,
+    /// Folder holding `todos.db` and `backups/`.
+    pub data_dir: PathBuf,
 }
 
 impl AppState {
@@ -145,4 +150,51 @@ pub fn get_settings(state: State<AppState>) -> AppResult<HashMap<String, String>
 #[tauri::command]
 pub fn set_setting(state: State<AppState>, key: String, value: String) -> AppResult<()> {
     db::set_setting(&state.conn(), &key, &value)
+}
+
+// ---------------------------------------------------------------------------
+// Backup & restore
+// ---------------------------------------------------------------------------
+
+#[tauri::command]
+pub fn export_backup(state: State<AppState>, path: String) -> AppResult<BackupSummary> {
+    backup::write_file(&state.conn(), Path::new(&path))
+}
+
+#[tauri::command]
+pub fn export_csv(state: State<AppState>, path: String) -> AppResult<()> {
+    let csv = backup::to_csv(&state.conn())?;
+    std::fs::write(path, csv)?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn preview_backup(path: String) -> AppResult<BackupSummary> {
+    Ok(backup::summary(&backup::read_file(Path::new(&path))?))
+}
+
+#[tauri::command]
+pub fn import_backup(
+    state: State<AppState>,
+    path: String,
+    mode: ImportMode,
+) -> AppResult<BackupSummary> {
+    let data = backup::read_file(Path::new(&path))?;
+    let mut conn = state.conn();
+    if mode == ImportMode::Replace {
+        backup::safety_backup(&conn, &state.data_dir)?;
+    }
+    backup::import(&mut conn, &data, mode, chrono::Utc::now())
+}
+
+#[tauri::command]
+pub fn list_auto_backups(state: State<AppState>) -> AppResult<Vec<BackupFile>> {
+    backup::list_backups(&state.data_dir)
+}
+
+#[tauri::command]
+pub fn open_data_folder(app: AppHandle, state: State<AppState>) -> AppResult<()> {
+    app.opener()
+        .open_path(state.data_dir.to_string_lossy(), None::<&str>)
+        .map_err(|e| AppError::Invalid(e.to_string()))
 }

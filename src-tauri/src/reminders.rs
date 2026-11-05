@@ -6,7 +6,7 @@ use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_notification::NotificationExt;
 
 use crate::commands::AppState;
-use crate::db;
+use crate::{backup, db};
 
 const POLL_INTERVAL: Duration = Duration::from_secs(15);
 
@@ -15,6 +15,7 @@ pub fn spawn(app: AppHandle) {
         .name("reminders".into())
         .spawn(move || loop {
             check(&app);
+            auto_backup(&app);
             std::thread::sleep(POLL_INTERVAL);
         })
         .expect("failed to spawn reminder thread");
@@ -47,4 +48,20 @@ fn check(app: &AppHandle) {
         }
     }
     let _ = app.emit("reminders-fired", &due);
+}
+
+/// Writes today's automatic backup once per day (cheap no-op otherwise).
+fn auto_backup(app: &AppHandle) {
+    let state = app.state::<AppState>();
+    let conn = state.conn();
+    let enabled = db::get_settings(&conn)
+        .map(|s| s.get("autoBackup").map(String::as_str) != Some("off"))
+        .unwrap_or(true);
+    if !enabled {
+        return;
+    }
+    let today = chrono::Local::now().format("%Y-%m-%d").to_string();
+    if let Err(e) = backup::auto_backup(&conn, &state.data_dir, &today) {
+        eprintln!("automatic backup failed: {e}");
+    }
 }

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import ConfirmDialog from "./components/ConfirmDialog.svelte";
+  import ImportDialog from "./components/ImportDialog.svelte";
   import DetailPanel from "./components/DetailPanel.svelte";
   import Menu from "./components/Menu.svelte";
   import SettingsDialog from "./components/SettingsDialog.svelte";
@@ -61,7 +62,7 @@
 </script>
 
 <svelte:window
-  onkeydown={(e) => handleShortcut(e, !!(store.settingsOpen || store.confirm || menu.current))}
+  onkeydown={(e) => handleShortcut(e, !!(store.settingsOpen || store.confirm || store.importPreview || menu.current))}
   {oncontextmenu}
 />
 
@@ -90,6 +91,9 @@
 {/if}
 {#if store.settingsOpen}
   <SettingsDialog />
+{/if}
+{#if store.importPreview}
+  <ImportDialog preview={store.importPreview} />
 {/if}
 {#if store.confirm}
   <ConfirmDialog req={store.confirm} />

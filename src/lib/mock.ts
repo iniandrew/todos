@@ -3,7 +3,19 @@
  * Tauri (`pnpm dev` in a normal browser). Data lives in localStorage.
  * Mirrors the behaviour of `src-tauri/src/db.rs`.
  */
-import type { Counts, DueReminder, ListPatch, NewTask, Task, TaskList, TaskPatch } from "./types";
+import type { BackupSummary, Counts, DueReminder, ImportMode, ListPatch, NewTask, Task, TaskList, TaskPatch } from "./types";
+
+interface Backup {
+  format: string;
+  version: number;
+  appVersion: string;
+  exportedAt: string;
+  lists: TaskList[];
+  tasks: Task[];
+  settings: Record<string, string>;
+}
+
+const LOCAL_ONLY_SETTINGS = ["lastView"];
 
 interface Db {
   lists: TaskList[];
@@ -237,6 +249,100 @@ export const mock = {
   async set_setting({ key, value }: { key: string; value: string }): Promise<void> {
     db.settings[key] = value;
     save();
+  },
+  // ------------------------------------------------------- backup (mirrors backup.rs)
+  exportBackup(): Backup {
+    const settings = { ...db.settings };
+    for (const k of LOCAL_ONLY_SETTINGS) delete settings[k];
+    return clone({
+      format: "todos-backup",
+      version: 1,
+      appVersion: "0.1.0",
+      exportedAt: now(),
+      lists: db.lists,
+      tasks: db.tasks,
+      settings,
+    });
+  },
+  summary(b: Backup): BackupSummary {
+    return {
+      lists: b.lists.filter((l) => !l.isDefault).length,
+      tasks: b.tasks.length,
+      steps: b.tasks.reduce((n, t) => n + (t.steps?.length ?? 0), 0),
+      exportedAt: b.exportedAt,
+    };
+  },
+  parseBackup(json: string): Backup {
+    let b: Partial<Backup>;
+    try {
+      b = JSON.parse(json);
+    } catch {
+      throw new Error("not a Todos backup file");
+    }
+    if (b?.format !== "todos-backup") throw new Error("not a Todos backup file");
+    if (typeof b.version !== "number") throw new Error("backup has no version");
+    if (b.version > 1) throw new Error("this backup was made by a newer version of Todos; please update the app");
+    if (!Array.isArray(b.lists) || !Array.isArray(b.tasks)) throw new Error("damaged backup file");
+    return { settings: {}, appVersion: "", ...b } as Backup;
+  },
+  importBackup(json: string, mode: ImportMode): BackupSummary {
+    const b = mock.parseBackup(json);
+    const local = defaultList();
+    if (mode === "replace") {
+      db.lists = [local];
+      db.tasks = [];
+    }
+    const listIds = new Map<string, string>();
+    for (const l of b.lists) {
+      if (l.isDefault) {
+        local.theme = l.theme;
+        local.icon = l.icon;
+        listIds.set(l.id, local.id);
+      } else {
+        const existing = db.lists.find((x) => x.id === l.id);
+        if (existing) Object.assign(existing, { name: l.name, icon: l.icon, theme: l.theme, sortOrder: l.sortOrder });
+        else db.lists.push({ ...clone(l), isDefault: false });
+        listIds.set(l.id, l.id);
+      }
+    }
+    for (const t of b.tasks) {
+      const listId = listIds.get(t.listId) ?? (db.lists.some((l) => l.id === t.listId) ? t.listId : local.id);
+      const task: Task = { ...clone(t), listId, steps: clone(t.steps ?? []) };
+      const i = db.tasks.findIndex((x) => x.id === t.id);
+      if (i >= 0) {
+        // Merge keeps local-only steps, like the SQL upsert.
+        const keep = db.tasks[i].steps.filter((s) => !task.steps.some((n) => n.id === s.id));
+        task.steps = [...task.steps, ...keep];
+        db.tasks[i] = task;
+      } else db.tasks.push(task);
+      if (t.reminderAt && new Date(t.reminderAt) <= new Date()) {
+        if (!db.fired.includes(t.id)) db.fired.push(t.id);
+      } else db.fired = db.fired.filter((f) => f !== t.id);
+    }
+    for (const [k, v] of Object.entries(b.settings ?? {})) if (!LOCAL_ONLY_SETTINGS.includes(k)) db.settings[k] = v;
+    save();
+    return mock.summary(b);
+  },
+  toCsv(): string {
+    const names = new Map(db.lists.map((l) => [l.id, l.name]));
+    const field = (v: string) => (/[",\r\n]/.test(v) ? `"${v.replaceAll('"', '""')}"` : v);
+    const yn = (b: boolean) => (b ? "yes" : "no");
+    const rows = [["List", "Title", "Completed", "Important", "Due date", "Reminder", "My Day", "Notes", "Steps", "Created", "Completed at"]];
+    for (const t of db.tasks)
+      rows.push([
+        names.get(t.listId) ?? "",
+        t.title,
+        yn(t.completed),
+        yn(t.important),
+        t.dueDate ?? "",
+        t.reminderAt ?? "",
+        t.myDayDate ?? "",
+        t.notes,
+        t.steps.map((s) => `[${s.completed ? "x" : " "}] ${s.title}`).join(" | "),
+        t.createdAt,
+        t.completedAt ?? "",
+      ]);
+    return "\ufeff" + rows.map((r) => r.map(field).join(",")).join("\r\n") + "\r\n";
   },
   /** Mock equivalent of the Rust reminder thread. */
   takeDueReminders(): DueReminder[] {
